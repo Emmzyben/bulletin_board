@@ -1,0 +1,92 @@
+{
+  "name": "Post",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Post headline"
+    },
+    "body": {
+      "type": "string",
+      "description": "Post content"
+    },
+    "flair": {
+      "type": "string",
+      "enum": [
+        "discussion",
+        "news",
+        "question",
+        "resource",
+        "job",
+        "insight",
+        "announcement",
+        "poll"
+      ],
+      "description": "Type of post"
+    },
+    "ecosystem": {
+      "type": "string",
+      "enum": [
+        "technology",
+        "healthcare",
+        "corporate",
+        "education",
+        "government",
+        "real_estate",
+        "hospitality",
+        "careers",
+        "entertainment"
+      ],
+      "description": "Which ecosystem this post belongs to"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Optional attached image"
+    },
+    "upvotes": {
+      "type": "number",
+      "default": 0
+    },
+    "downvotes": {
+      "type": "number",
+      "default": 0
+    },
+    "vote_score": {
+      "type": "number",
+      "default": 0
+    },
+    "author_name": {
+      "type": "string"
+    },
+    "author_email": {
+      "type": "string"
+    },
+    "comment_count": {
+      "type": "number",
+      "default": 0
+    },
+    "poll_options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "votes": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "saves_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "title",
+    "flair",
+    "ecosystem"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "Workspace",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "ecosystem": {
+      "type": "string",
+      "enum": [
+        "technology",
+        "healthcare",
+        "corporate",
+        "education",
+        "government",
+        "real_estate",
+        "hospitality",
+        "careers",
+        "entertainment"
+      ]
+    },
+    "owner_email": {
+      "type": "string"
+    },
+    "member_count": {
+      "type": "number",
+      "default": 1
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "enterprise"
+      ],
+      "default": "free"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

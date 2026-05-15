@@ -1,0 +1,36 @@
+{
+  "version": "53.0.0",
+  "files": {
+    "83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60": {
+      "displayName": "GetPublicPostsFunction/Code",
+      "source": {
+        "path": "asset.83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-us-east-1-3cd5fec6": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
+          "objectKey": "83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+        }
+      }
+    },
+    "8e16a65b3346ec1c75c94a4933355770dc5c15181dee04eb7667373d42984feb": {
+      "displayName": "BulletinBoardStack Template",
+      "source": {
+        "path": "BulletinBoardStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-us-east-1-61aa08f4": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
+          "objectKey": "8e16a65b3346ec1c75c94a4933355770dc5c15181dee04eb7667373d42984feb.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

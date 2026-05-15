@@ -1,0 +1,875 @@
+{
+  "/BulletinBoardStack": [
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/UserTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "UserTableBD4BF69E"
+      }
+    }
+  ],
+  "/BulletinBoardStack/WorkspaceTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "WorkspaceTable68AC2584"
+      }
+    }
+  ],
+  "/BulletinBoardStack/PostTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "PostTable197E3F68"
+      }
+    }
+  ],
+  "/BulletinBoardStack/CommentTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "CommentTableE9F84112"
+      }
+    }
+  ],
+  "/BulletinBoardStack/ChannelTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "ChannelTableD3C84F79"
+      }
+    }
+  ],
+  "/BulletinBoardStack/MessageTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "MessageTable477906EA"
+      }
+    }
+  ],
+  "/BulletinBoardStack/VoteTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "VoteTableC0BC27A7"
+      }
+    }
+  ],
+  "/BulletinBoardStack/ReactionTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "ReactionTableFB608EAC"
+      }
+    }
+  ],
+  "/BulletinBoardStack/FollowTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "FollowTableA8C0D669"
+      }
+    }
+  ],
+  "/BulletinBoardStack/SavedPostTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "SavedPostTable272755E5"
+      }
+    }
+  ],
+  "/BulletinBoardStack/SubscriptionTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "SubscriptionTableF7958E60"
+      }
+    }
+  ],
+  "/BulletinBoardStack/PresenceTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "PresenceTable3ADAA3E7"
+      }
+    }
+  ],
+  "/BulletinBoardStack/B2BSpaceTable": [
+    {
+      "type": "aws:cdk:hasPhysicalName",
+      "data": {
+        "Ref": "B2BSpaceTableA22FA1C6"
+      }
+    }
+  ],
+  "/BulletinBoardStack/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/BulletinBoardStack/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/BulletinBoardStack/UserTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "UserTableBD4BF69E"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:15:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/WorkspaceTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WorkspaceTable68AC2584"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:22:24)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/PostTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "PostTable197E3F68"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:29:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/CommentTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CommentTableE9F84112"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:37:22)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/ChannelTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ChannelTableD3C84F79"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:45:22)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/MessageTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "MessageTable477906EA"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:52:22)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/VoteTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VoteTableC0BC27A7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:60:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/ReactionTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ReactionTableFB608EAC"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:68:23)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/FollowTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FollowTableA8C0D669"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:75:21)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/SavedPostTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SavedPostTable272755E5"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:83:24)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/SubscriptionTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SubscriptionTableF7958E60"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:91:27)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/PresenceTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "PresenceTable3ADAA3E7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:98:23)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/B2BSpaceTable/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "B2BSpaceTableA22FA1C6"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Table2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:106:23)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardUserPool/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardUserPoolB175061D"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new UserPool2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:113:22)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardUserPoolClient/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardUserPoolClientF4CC3DD7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new UserPoolClient2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:127:28)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/GetPublicPostsFunction/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "GetPublicPostsFunctionE8CBD7CE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:136:38)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/StartTrialFunction/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "StartTrialFunctionCA29242A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:148:34)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/CheckTrialUpgradeFunction/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckTrialUpgradeFunction68D52182"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:160:41)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/FetchNewsFunction/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FetchNewsFunction72014F7A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:172:33)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApi4999144B"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:187:17)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Endpoint": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApiEndpointA4E890C5"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:187:17)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...aws-cdk-lib, node internals...",
+        "(no user code in 9007199254740991 frames, use --stack-trace-limit to capture more)"
+      ]
+    }
+  ],
+  "/BulletinBoardStack/GetPublicPostsFunction/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "GetPublicPostsFunctionServiceRoleE4D26621"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:136:38)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/StartTrialFunction/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "StartTrialFunctionServiceRoleDBF48E0D"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:148:34)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/CheckTrialUpgradeFunction/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckTrialUpgradeFunctionServiceRoleCCB85CAE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:160:41)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/FetchNewsFunction/ServiceRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FetchNewsFunctionServiceRole2E3619A7"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new Function2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:172:33)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Deployment/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApiDeploymentEE184B26f3d5857e153a388329807d543863d916"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:187:17)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/DeploymentStage.prod/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApiDeploymentStageprod1FBA31D6"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...new RestApi2 in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:187:17)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/GetPublicPostsFunction/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "GetPublicPostsFunctionServiceRoleDefaultPolicy30346349"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.grantReadWriteData in aws-cdk-lib...",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182:1)",
+        "Array.forEach (:)",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181:3)",
+        "Array.forEach (:)",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:180:27)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/StartTrialFunction/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "StartTrialFunctionServiceRoleDefaultPolicyC11EDD53"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.grantReadWriteData in aws-cdk-lib...",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182:1)",
+        "Array.forEach (:)",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181:3)",
+        "Array.forEach (:)",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:180:27)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/CheckTrialUpgradeFunction/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckTrialUpgradeFunctionServiceRoleDefaultPolicy975389E8"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.grantReadWriteData in aws-cdk-lib...",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182:1)",
+        "Array.forEach (:)",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181:3)",
+        "Array.forEach (:)",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:180:27)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/FetchNewsFunction/ServiceRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "FetchNewsFunctionServiceRoleDefaultPolicyECD00624"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.grantReadWriteData in aws-cdk-lib...",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:182:1)",
+        "Array.forEach (:)",
+        "C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181: (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:181:3)",
+        "Array.forEach (:)",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:180:27)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/posts/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApipostsFB9428FE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:193:36)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/trial/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApitrial4036CCDC"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:196:36)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/check-trial/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApichecktrialBE1863F6"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:199:41)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/news/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApinewsFAF881E4"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...RootResource.addResource in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:202:35)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/posts/GET/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..posts": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApipostsGETApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8GETpostsBB364786"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:194:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/posts/GET/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..posts": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApipostsGETApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8GETpostsAF18DE74"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:194:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/posts/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApipostsGET79CDD1EE"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:194:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/trial/POST/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.POST..trial": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApitrialPOSTApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8POSTtrial4B55F7C4"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:197:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/trial/POST/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.POST..trial": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApitrialPOSTApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8POSTtrial1203FFA3"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:197:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/trial/POST/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApitrialPOSTDD5EBB6A"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:197:19)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/check-trial/GET/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..check-trial": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApichecktrialGETApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8GETchecktrialC7733F14"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:200:24)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/check-trial/GET/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..check-trial": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApichecktrialGETApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8GETchecktrialD8480143"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:200:24)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/check-trial/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApichecktrialGET5A7365E5"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:200:24)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/news/GET/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..news": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApinewsGETApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8GETnewsCDBA9776"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:203:18)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/news/GET/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..news": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApinewsGETApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8GETnews679099DA"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:203:18)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ],
+  "/BulletinBoardStack/BulletinBoardApi/Default/news/GET/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BulletinBoardApinewsGET99B29397"
+    },
+    {
+      "type": "aws:cdk:creationStack",
+      "data": [
+        "...WrappedClass.addMethod in aws-cdk-lib...",
+        "new BulletinBoardStack (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\lib\\bulletin-board-stack.js:203:18)",
+        "<anonymous> (C:\\Users\\User\\Downloads\\Bulletin board project 2\\aws-backend\\bin\\app.js:7:1)",
+        "...node internals..."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "B2BSpace",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string"
+    },
+    "admin_email": {
+      "type": "string"
+    },
+    "relationship_type": {
+      "type": "string",
+      "enum": [
+        "client",
+        "partner",
+        "investor",
+        "vendor"
+      ]
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "pending",
+        "inactive"
+      ],
+      "default": "pending"
+    },
+    "shared_channels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "company_name",
+    "workspace_id"
+  ]
+}

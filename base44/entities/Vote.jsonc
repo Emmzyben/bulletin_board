@@ -1,0 +1,24 @@
+{
+  "name": "Vote",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string"
+    },
+    "voter_email": {
+      "type": "string"
+    },
+    "vote_type": {
+      "type": "string",
+      "enum": [
+        "up",
+        "down"
+      ]
+    }
+  },
+  "required": [
+    "post_id",
+    "voter_email",
+    "vote_type"
+  ]
+}

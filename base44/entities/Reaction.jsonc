@@ -1,0 +1,26 @@
+{
+  "name": "Reaction",
+  "type": "object",
+  "properties": {
+    "post_id": {
+      "type": "string",
+      "description": "Post ID being reacted to"
+    },
+    "comment_id": {
+      "type": "string",
+      "description": "Comment ID being reacted to (optional)"
+    },
+    "emoji": {
+      "type": "string",
+      "description": "Emoji reaction (\ud83d\udc4d, \u2764\ufe0f, \ud83d\ude02, etc.)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email of user who reacted"
+    }
+  },
+  "required": [
+    "emoji",
+    "user_email"
+  ]
+}

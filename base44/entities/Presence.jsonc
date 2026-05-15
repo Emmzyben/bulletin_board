@@ -1,0 +1,40 @@
+{
+  "name": "Presence",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "Channel the user is currently viewing"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "online",
+        "away",
+        "offline"
+      ],
+      "default": "online"
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_read": {
+      "type": "object",
+      "description": "Map of channel_id -> last read message timestamp"
+    }
+  },
+  "required": [
+    "user_email",
+    "workspace_id"
+  ]
+}

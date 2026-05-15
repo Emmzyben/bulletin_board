@@ -1,0 +1,79 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "bio": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "primary_ecosystem": {
+      "type": "string",
+      "enum": [
+        "technology",
+        "healthcare",
+        "corporate",
+        "education",
+        "government",
+        "real_estate",
+        "hospitality",
+        "careers",
+        "entertainment"
+      ]
+    },
+    "karma": {
+      "type": "number",
+      "default": 0
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "onboarded": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "away",
+        "dnd",
+        "ooo"
+      ],
+      "default": "active"
+    },
+    "avatar_url": {
+      "type": "string"
+    },
+    "posts_this_month": {
+      "type": "number",
+      "default": 0
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "enterprise"
+      ],
+      "default": "free"
+    },
+    "followers_count": {
+      "type": "number",
+      "default": 0
+    },
+    "following_count": {
+      "type": "number",
+      "default": 0
+    }
+  }
+}

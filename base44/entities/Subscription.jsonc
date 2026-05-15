@@ -1,0 +1,37 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user"
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro"
+      ],
+      "default": "free",
+      "description": "Current subscription plan"
+    },
+    "trial_started_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the 14-day trial started"
+    },
+    "trial_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the 14-day trial ends (auto-upgrade to pro)"
+    },
+    "pro_since_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When user upgraded to pro plan"
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}

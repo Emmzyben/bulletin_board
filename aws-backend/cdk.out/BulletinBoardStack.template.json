@@ -1,0 +1,1800 @@
+{
+ "Resources": {
+  "UserTableBD4BF69E": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "email",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "email",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "BulletinBoard-User"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/UserTable/Resource"
+   }
+  },
+  "WorkspaceTable68AC2584": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "BulletinBoard-Workspace"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/WorkspaceTable/Resource"
+   }
+  },
+  "PostTable197E3F68": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "created_date",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "created_date",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-Post"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/PostTable/Resource"
+   }
+  },
+  "CommentTableE9F84112": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "created_date",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "created_date",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-Comment"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/CommentTable/Resource"
+   }
+  },
+  "ChannelTableD3C84F79": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "BulletinBoard-Channel"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/ChannelTable/Resource"
+   }
+  },
+  "MessageTable477906EA": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "created_date",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "created_date",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-Message"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/MessageTable/Resource"
+   }
+  },
+  "VoteTableC0BC27A7": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "post_id",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "voter_email",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "post_id",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "voter_email",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-Vote"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/VoteTable/Resource"
+   }
+  },
+  "ReactionTableFB608EAC": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "BulletinBoard-Reaction"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/ReactionTable/Resource"
+   }
+  },
+  "FollowTableA8C0D669": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "follower_email",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "following_email",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "follower_email",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "following_email",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-Follow"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/FollowTable/Resource"
+   }
+  },
+  "SavedPostTable272755E5": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "user_email",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "post_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "user_email",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "post_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-SavedPost"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/SavedPostTable/Resource"
+   }
+  },
+  "SubscriptionTableF7958E60": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "user_email",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "user_email",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "BulletinBoard-Subscription"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/SubscriptionTable/Resource"
+   }
+  },
+  "PresenceTable3ADAA3E7": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "user_email",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "workspace_id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "user_email",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "workspace_id",
+      "KeyType": "RANGE"
+     }
+    ],
+    "TableName": "BulletinBoard-Presence"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/PresenceTable/Resource"
+   }
+  },
+  "B2BSpaceTableA22FA1C6": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "id",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "id",
+      "KeyType": "HASH"
+     }
+    ],
+    "TableName": "BulletinBoard-B2BSpace"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/B2BSpaceTable/Resource"
+   }
+  },
+  "BulletinBoardUserPoolB175061D": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_phone_number",
+       "Priority": 1
+      },
+      {
+       "Name": "verified_email",
+       "Priority": 2
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": false
+    },
+    "AutoVerifiedAttributes": [
+     "email"
+    ],
+    "EmailVerificationMessage": "The verification code to your new account is {####}",
+    "EmailVerificationSubject": "Verify your new account",
+    "Policies": {
+     "PasswordPolicy": {
+      "MinimumLength": 8,
+      "RequireLowercase": true,
+      "RequireNumbers": true,
+      "RequireUppercase": true
+     }
+    },
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolName": "BulletinBoardUserPool",
+    "UsernameAttributes": [
+     "email"
+    ],
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "The verification code to your new account is {####}",
+     "EmailSubject": "Verify your new account",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardUserPool/Resource"
+   }
+  },
+  "BulletinBoardUserPoolClientF4CC3DD7": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AllowedOAuthFlows": [
+     "implicit",
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "profile",
+     "phone",
+     "email",
+     "openid",
+     "aws.cognito.signin.user.admin"
+    ],
+    "CallbackURLs": [
+     "https://example.com"
+    ],
+    "GenerateSecret": false,
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "UserPoolId": {
+     "Ref": "BulletinBoardUserPoolB175061D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardUserPoolClient/Resource"
+   }
+  },
+  "GetPublicPostsFunctionServiceRoleE4D26621": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/GetPublicPostsFunction/ServiceRole/Resource"
+   }
+  },
+  "GetPublicPostsFunctionServiceRoleDefaultPolicy30346349": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "B2BSpaceTableA22FA1C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ChannelTableD3C84F79",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "CommentTableE9F84112",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "FollowTableA8C0D669",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "MessageTable477906EA",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PostTable197E3F68",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PresenceTable3ADAA3E7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ReactionTableFB608EAC",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SavedPostTable272755E5",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SubscriptionTableF7958E60",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "UserTableBD4BF69E",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "VoteTableC0BC27A7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "WorkspaceTable68AC2584",
+          "Arn"
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "GetPublicPostsFunctionServiceRoleDefaultPolicy30346349",
+    "Roles": [
+     {
+      "Ref": "GetPublicPostsFunctionServiceRoleE4D26621"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/GetPublicPostsFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "GetPublicPostsFunctionE8CBD7CE": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "USER_TABLE": {
+       "Ref": "UserTableBD4BF69E"
+      },
+      "POST_TABLE": {
+       "Ref": "PostTable197E3F68"
+      }
+     }
+    },
+    "Handler": "getPublicPosts.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "GetPublicPostsFunctionServiceRoleE4D26621",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "GetPublicPostsFunctionServiceRoleDefaultPolicy30346349",
+    "GetPublicPostsFunctionServiceRoleE4D26621"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/GetPublicPostsFunction/Resource",
+    "aws:asset:path": "asset.83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "StartTrialFunctionServiceRoleDBF48E0D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/StartTrialFunction/ServiceRole/Resource"
+   }
+  },
+  "StartTrialFunctionServiceRoleDefaultPolicyC11EDD53": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "B2BSpaceTableA22FA1C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ChannelTableD3C84F79",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "CommentTableE9F84112",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "FollowTableA8C0D669",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "MessageTable477906EA",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PostTable197E3F68",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PresenceTable3ADAA3E7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ReactionTableFB608EAC",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SavedPostTable272755E5",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SubscriptionTableF7958E60",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "UserTableBD4BF69E",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "VoteTableC0BC27A7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "WorkspaceTable68AC2584",
+          "Arn"
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "StartTrialFunctionServiceRoleDefaultPolicyC11EDD53",
+    "Roles": [
+     {
+      "Ref": "StartTrialFunctionServiceRoleDBF48E0D"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/StartTrialFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "StartTrialFunctionCA29242A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "SUBSCRIPTION_TABLE": {
+       "Ref": "SubscriptionTableF7958E60"
+      },
+      "WORKSPACE_TABLE": {
+       "Ref": "WorkspaceTable68AC2584"
+      }
+     }
+    },
+    "Handler": "startTrial.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "StartTrialFunctionServiceRoleDBF48E0D",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "StartTrialFunctionServiceRoleDefaultPolicyC11EDD53",
+    "StartTrialFunctionServiceRoleDBF48E0D"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/StartTrialFunction/Resource",
+    "aws:asset:path": "asset.83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CheckTrialUpgradeFunctionServiceRoleCCB85CAE": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/CheckTrialUpgradeFunction/ServiceRole/Resource"
+   }
+  },
+  "CheckTrialUpgradeFunctionServiceRoleDefaultPolicy975389E8": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "B2BSpaceTableA22FA1C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ChannelTableD3C84F79",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "CommentTableE9F84112",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "FollowTableA8C0D669",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "MessageTable477906EA",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PostTable197E3F68",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PresenceTable3ADAA3E7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ReactionTableFB608EAC",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SavedPostTable272755E5",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SubscriptionTableF7958E60",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "UserTableBD4BF69E",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "VoteTableC0BC27A7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "WorkspaceTable68AC2584",
+          "Arn"
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "CheckTrialUpgradeFunctionServiceRoleDefaultPolicy975389E8",
+    "Roles": [
+     {
+      "Ref": "CheckTrialUpgradeFunctionServiceRoleCCB85CAE"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/CheckTrialUpgradeFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "CheckTrialUpgradeFunction68D52182": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "SUBSCRIPTION_TABLE": {
+       "Ref": "SubscriptionTableF7958E60"
+      },
+      "WORKSPACE_TABLE": {
+       "Ref": "WorkspaceTable68AC2584"
+      }
+     }
+    },
+    "Handler": "checkTrialUpgrade.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CheckTrialUpgradeFunctionServiceRoleCCB85CAE",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "CheckTrialUpgradeFunctionServiceRoleDefaultPolicy975389E8",
+    "CheckTrialUpgradeFunctionServiceRoleCCB85CAE"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/CheckTrialUpgradeFunction/Resource",
+    "aws:asset:path": "asset.83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "FetchNewsFunctionServiceRole2E3619A7": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/FetchNewsFunction/ServiceRole/Resource"
+   }
+  },
+  "FetchNewsFunctionServiceRoleDefaultPolicyECD00624": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "B2BSpaceTableA22FA1C6",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ChannelTableD3C84F79",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "CommentTableE9F84112",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "FollowTableA8C0D669",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "MessageTable477906EA",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PostTable197E3F68",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "PresenceTable3ADAA3E7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "ReactionTableFB608EAC",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SavedPostTable272755E5",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "SubscriptionTableF7958E60",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "UserTableBD4BF69E",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "VoteTableC0BC27A7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::GetAtt": [
+          "WorkspaceTable68AC2584",
+          "Arn"
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "FetchNewsFunctionServiceRoleDefaultPolicyECD00624",
+    "Roles": [
+     {
+      "Ref": "FetchNewsFunctionServiceRole2E3619A7"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/FetchNewsFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "FetchNewsFunction72014F7A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60.zip"
+    },
+    "Handler": "fetchNews.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "FetchNewsFunctionServiceRole2E3619A7",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs18.x",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "FetchNewsFunctionServiceRoleDefaultPolicyECD00624",
+    "FetchNewsFunctionServiceRole2E3619A7"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/FetchNewsFunction/Resource",
+    "aws:asset:path": "asset.83aa9e43cee97f0b6d36ca2f372f93b3ff4541e476749db561b2fb00a1961f60",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "BulletinBoardApi4999144B": {
+   "Type": "AWS::ApiGateway::RestApi",
+   "Properties": {
+    "Description": "API for Bulletin Board application",
+    "Name": "BulletinBoardApi"
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Resource"
+   }
+  },
+  "BulletinBoardApiDeploymentEE184B26f3d5857e153a388329807d543863d916": {
+   "Type": "AWS::ApiGateway::Deployment",
+   "Properties": {
+    "Description": "API for Bulletin Board application",
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "DependsOn": [
+    "BulletinBoardApichecktrialGET5A7365E5",
+    "BulletinBoardApichecktrialBE1863F6",
+    "BulletinBoardApinewsGET99B29397",
+    "BulletinBoardApinewsFAF881E4",
+    "BulletinBoardApipostsGET79CDD1EE",
+    "BulletinBoardApipostsFB9428FE",
+    "BulletinBoardApitrialPOSTDD5EBB6A",
+    "BulletinBoardApitrial4036CCDC"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Deployment/Resource",
+    "aws:cdk:do-not-refactor": true
+   }
+  },
+  "BulletinBoardApiDeploymentStageprod1FBA31D6": {
+   "Type": "AWS::ApiGateway::Stage",
+   "Properties": {
+    "DeploymentId": {
+     "Ref": "BulletinBoardApiDeploymentEE184B26f3d5857e153a388329807d543863d916"
+    },
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    },
+    "StageName": "prod"
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/DeploymentStage.prod/Resource"
+   }
+  },
+  "BulletinBoardApipostsFB9428FE": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "BulletinBoardApi4999144B",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "posts",
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/posts/Resource"
+   }
+  },
+  "BulletinBoardApipostsGETApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8GETpostsBB364786": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetPublicPostsFunctionE8CBD7CE",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/",
+       {
+        "Ref": "BulletinBoardApiDeploymentStageprod1FBA31D6"
+       },
+       "/GET/posts"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/posts/GET/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..posts"
+   }
+  },
+  "BulletinBoardApipostsGETApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8GETpostsAF18DE74": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "GetPublicPostsFunctionE8CBD7CE",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/test-invoke-stage/GET/posts"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/posts/GET/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..posts"
+   }
+  },
+  "BulletinBoardApipostsGET79CDD1EE": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "GetPublicPostsFunctionE8CBD7CE",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "BulletinBoardApipostsFB9428FE"
+    },
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/posts/GET/Resource"
+   }
+  },
+  "BulletinBoardApitrial4036CCDC": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "BulletinBoardApi4999144B",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "trial",
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/trial/Resource"
+   }
+  },
+  "BulletinBoardApitrialPOSTApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8POSTtrial4B55F7C4": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "StartTrialFunctionCA29242A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/",
+       {
+        "Ref": "BulletinBoardApiDeploymentStageprod1FBA31D6"
+       },
+       "/POST/trial"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/trial/POST/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.POST..trial"
+   }
+  },
+  "BulletinBoardApitrialPOSTApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8POSTtrial1203FFA3": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "StartTrialFunctionCA29242A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/test-invoke-stage/POST/trial"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/trial/POST/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.POST..trial"
+   }
+  },
+  "BulletinBoardApitrialPOSTDD5EBB6A": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "POST",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "StartTrialFunctionCA29242A",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "BulletinBoardApitrial4036CCDC"
+    },
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/trial/POST/Resource"
+   }
+  },
+  "BulletinBoardApichecktrialBE1863F6": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "BulletinBoardApi4999144B",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "check-trial",
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/check-trial/Resource"
+   }
+  },
+  "BulletinBoardApichecktrialGETApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8GETchecktrialC7733F14": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "CheckTrialUpgradeFunction68D52182",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/",
+       {
+        "Ref": "BulletinBoardApiDeploymentStageprod1FBA31D6"
+       },
+       "/GET/check-trial"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/check-trial/GET/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..check-trial"
+   }
+  },
+  "BulletinBoardApichecktrialGETApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8GETchecktrialD8480143": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "CheckTrialUpgradeFunction68D52182",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/test-invoke-stage/GET/check-trial"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/check-trial/GET/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..check-trial"
+   }
+  },
+  "BulletinBoardApichecktrialGET5A7365E5": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "CheckTrialUpgradeFunction68D52182",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "BulletinBoardApichecktrialBE1863F6"
+    },
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/check-trial/GET/Resource"
+   }
+  },
+  "BulletinBoardApinewsFAF881E4": {
+   "Type": "AWS::ApiGateway::Resource",
+   "Properties": {
+    "ParentId": {
+     "Fn::GetAtt": [
+      "BulletinBoardApi4999144B",
+      "RootResourceId"
+     ]
+    },
+    "PathPart": "news",
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/news/Resource"
+   }
+  },
+  "BulletinBoardApinewsGETApiPermissionBulletinBoardStackBulletinBoardApiFCEC1BF8GETnewsCDBA9776": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FetchNewsFunction72014F7A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/",
+       {
+        "Ref": "BulletinBoardApiDeploymentStageprod1FBA31D6"
+       },
+       "/GET/news"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/news/GET/ApiPermission.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..news"
+   }
+  },
+  "BulletinBoardApinewsGETApiPermissionTestBulletinBoardStackBulletinBoardApiFCEC1BF8GETnews679099DA": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Fn::GetAtt": [
+      "FetchNewsFunction72014F7A",
+      "Arn"
+     ]
+    },
+    "Principal": "apigateway.amazonaws.com",
+    "SourceArn": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:aws:execute-api:us-east-1:",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":",
+       {
+        "Ref": "BulletinBoardApi4999144B"
+       },
+       "/test-invoke-stage/GET/news"
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/news/GET/ApiPermission.Test.BulletinBoardStackBulletinBoardApiFCEC1BF8.GET..news"
+   }
+  },
+  "BulletinBoardApinewsGET99B29397": {
+   "Type": "AWS::ApiGateway::Method",
+   "Properties": {
+    "AuthorizationType": "NONE",
+    "HttpMethod": "GET",
+    "Integration": {
+     "IntegrationHttpMethod": "POST",
+     "Type": "AWS_PROXY",
+     "Uri": {
+      "Fn::Join": [
+       "",
+       [
+        "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/",
+        {
+         "Fn::GetAtt": [
+          "FetchNewsFunction72014F7A",
+          "Arn"
+         ]
+        },
+        "/invocations"
+       ]
+      ]
+     }
+    },
+    "ResourceId": {
+     "Ref": "BulletinBoardApinewsFAF881E4"
+    },
+    "RestApiId": {
+     "Ref": "BulletinBoardApi4999144B"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/BulletinBoardApi/Default/news/GET/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02OQW/CMAyFfwv34G1FSLsC027TUNnOyE29zpDGVZ0OVVH++9QUNk7vs/30ngso1it4XOBFl7Y+Lx1XEA8B7dngRY+xHj22UlcQP7ByZHZfPkMyVhrPQSB+KvV7ETfd/vgGO8fkw/1p3iTjsK1qhPg6eBtY/OS55z31Lauy+GQYW4ilzP1Z9+LYjtmXKRldHVGVgsJmEqMr2A72TGGLSgY7bjDQBUeIJWnYdJyzrvhCnZOxvb56Nx0CNrl1hpJUht5SzrwN16CZ3yh8Sz2tZkrp35cfm4LYN5PjfQjdEJLxUhOc9OGnWMMzPC1OyrzsBx+4JShn/QWhQ1p1qQEAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "BulletinBoardStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "BulletinBoardApiEndpointA4E890C5": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "https://",
+      {
+       "Ref": "BulletinBoardApi4999144B"
+      },
+      ".execute-api.us-east-1.",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "BulletinBoardApiDeploymentStageprod1FBA31D6"
+      },
+      "/"
+     ]
+    ]
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string"
+    },
+    "channel_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "sender_email": {
+      "type": "string"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "is_dm": {
+      "type": "boolean",
+      "default": false
+    },
+    "dm_recipient": {
+      "type": "string"
+    },
+    "reactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "emoji": {
+            "type": "string"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "file_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "content"
+  ]
+}
