@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import {
+  ChevronLeft, ChevronRight, Pause, Play,
+  Globe, Building2, Mic, MicOff, Wrench, Handshake, DollarSign,
+  MessageSquare, BarChart2, Briefcase,
+  FolderOpen, CheckSquare, GitBranch, Target, BookOpen,
+  CreditCard, Cloud, CalendarDays, Paintbrush,
+  Lock, Clapperboard, PartyPopper, Clock,
+  Newspaper, Flame, Video, Monitor, PhoneOff,
+  Star, Leaf, Check, ChevronUp, ChevronDown,
+} from 'lucide-react';
 
 const STEPS = [
   {
     id: 1,
-    icon: '🌐',
+    Icon: Globe,
     title: 'The GP Feed — Your public professional community',
     subtitle: 'GP Feed',
     duration: '1:00',
@@ -14,7 +23,7 @@ const STEPS = [
   },
   {
     id: 2,
-    icon: '🏢',
+    Icon: Building2,
     title: 'Private Workspace — where your team gets work done',
     subtitle: 'Private Workspace',
     duration: '1:00',
@@ -22,7 +31,7 @@ const STEPS = [
   },
   {
     id: 3,
-    icon: '🎙️',
+    Icon: Mic,
     title: 'Voice & Video Huddles — built right in',
     subtitle: 'Voice & Video Huddles',
     duration: '0:45',
@@ -30,7 +39,7 @@ const STEPS = [
   },
   {
     id: 4,
-    icon: '🔧',
+    Icon: Wrench,
     title: 'App Integrations — your tools, in one place',
     subtitle: 'App Integrations',
     duration: '0:45',
@@ -38,7 +47,7 @@ const STEPS = [
   },
   {
     id: 5,
-    icon: '🤝',
+    Icon: Handshake,
     title: 'B2B Collaboration — clients inside your workspace',
     subtitle: 'B2B Collaboration',
     duration: '1:00',
@@ -46,7 +55,7 @@ const STEPS = [
   },
   {
     id: 6,
-    icon: '💰',
+    Icon: DollarSign,
     title: 'Simple, transparent pricing',
     subtitle: 'Pricing',
     duration: '0:30',
@@ -54,47 +63,74 @@ const STEPS = [
   },
 ];
 
+const FEED_TABS = [
+  { label: 'Explore', Icon: Globe },
+  { label: 'News',    Icon: Newspaper },
+  { label: 'Careers', Icon: Briefcase },
+  { label: 'Popular', Icon: Flame },
+  { label: 'Polls',   Icon: BarChart2 },
+];
+
 const MOCK_POSTS = [
-  { score: 247, flair: '💬', flairLabel: 'Discussion', title: 'The rise of agentic AI in enterprise workflows — are teams ready for 2026?', eco: '💻 Technology', ago: '2h ago', comments: 34 },
-  { score: 1200, flair: '📊', flairLabel: 'Poll', title: 'What is your biggest engineering challenge in 2026?', eco: '💻 Technology', ago: '2d ago', comments: 89, isPoll: true },
-  { score: 89, flair: '💼', flairLabel: 'Job', title: '[Hiring] Senior Full-Stack Engineer · Remote · $140K–$180K · Houston', eco: '💼 Careers', ago: '3h ago', comments: 12 },
+  { score: 247,  FlairIcon: MessageSquare, flairLabel: 'Discussion', title: 'The rise of agentic AI in enterprise workflows — are teams ready for 2026?', eco: 'Technology', ago: '2h ago',  comments: 34 },
+  { score: 1200, FlairIcon: BarChart2,     flairLabel: 'Poll',       title: 'What is your biggest engineering challenge in 2026?',                         eco: 'Technology', ago: '2d ago', comments: 89, isPoll: true },
+  { score: 89,   FlairIcon: Briefcase,     flairLabel: 'Job',        title: '[Hiring] Senior Full-Stack Engineer · Remote · $140K–$180K · Houston',        eco: 'Careers',    ago: '3h ago', comments: 12 },
 ];
 
 const INTEGRATIONS = [
-  { icon: '📁', name: 'Google Drive', connected: true },
-  { icon: '✅', name: 'Asana', connected: true },
-  { icon: '🐙', name: 'GitHub', connected: true },
-  { icon: '🎯', name: 'Jira', connected: false },
-  { icon: '📓', name: 'Notion', connected: false },
-  { icon: '💳', name: 'Stripe', connected: false },
-  { icon: '☁️', name: 'Salesforce', connected: false },
-  { icon: '📅', name: 'Calendar', connected: false },
-  { icon: '🎨', name: 'Figma', connected: false },
+  { Icon: FolderOpen,   name: 'Google Drive', connected: true  },
+  { Icon: CheckSquare,  name: 'Asana',        connected: true  },
+  { Icon: GitBranch,    name: 'GitHub',       connected: true  },
+  { Icon: Target,       name: 'Jira',         connected: false },
+  { Icon: BookOpen,     name: 'Notion',       connected: false },
+  { Icon: CreditCard,   name: 'Stripe',       connected: false },
+  { Icon: Cloud,        name: 'Salesforce',   connected: false },
+  { Icon: CalendarDays, name: 'Calendar',     connected: false },
+  { Icon: Paintbrush,   name: 'Figma',        connected: false },
 ];
 
 const B2B_SPACES = [
-  { initials: 'TN', name: 'TechNova Solutions', type: 'Client', channels: ['techno-project', 'techno-support'], grad: 'linear-gradient(135deg,#1B6EF3,#00B4D8)' },
-  { initials: 'PG', name: 'Petro-Drill Global', type: 'Partner', channels: ['petro-contracts', 'petro-updates'], grad: 'linear-gradient(135deg,#00C853,#00897B)' },
-  { initials: 'FC', name: 'Falcon Capital', type: 'Investor', channels: ['falcon-deal-room'], grad: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)' },
+  { initials: 'TN', name: 'TechNova Solutions', type: 'Client',   channels: ['techno-project', 'techno-support'], grad: 'linear-gradient(135deg,#1B6EF3,#00B4D8)' },
+  { initials: 'PG', name: 'Petro-Drill Global', type: 'Partner',  channels: ['petro-contracts', 'petro-updates'], grad: 'linear-gradient(135deg,#00C853,#00897B)' },
+  { initials: 'FC', name: 'Falcon Capital',     type: 'Investor', channels: ['falcon-deal-room'],                grad: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)' },
+];
+
+const HUDDLE_CONTROLS = [
+  { Icon: Mic,      label: 'Mic'    },
+  { Icon: Video,    label: 'Video'  },
+  { Icon: Monitor,  label: 'Screen' },
+  { Icon: PhoneOff, label: 'End',   danger: true },
 ];
 
 function StepContent({ step }) {
   if (step === 1) return (
     <div style={{ background: '#0B1628', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 8, alignItems: 'center' }}>
-        {['🌐 Explore', '📰 News', '💼 Careers', '🔥 Popular', '📊 Polls'].map(t => (
-          <button key={t} style={{ padding: '4px 10px', borderRadius: 6, background: t === '🌐 Explore' ? '#1B6EF3' : 'transparent', border: t === '🌐 Explore' ? 'none' : '1px solid rgba(255,255,255,.08)', color: t === '🌐 Explore' ? '#fff' : '#7FA8D4', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{t}</button>
+        {FEED_TABS.map((t, i) => (
+          <button key={t.label} style={{
+            padding: '4px 10px', borderRadius: 6,
+            background: i === 0 ? '#1B6EF3' : 'transparent',
+            border: i === 0 ? 'none' : '1px solid rgba(255,255,255,.08)',
+            color: i === 0 ? '#fff' : '#7FA8D4',
+            fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 5,
+          }}>
+            <t.Icon style={{ width: 11, height: 11 }} />
+            {t.label}
+          </button>
         ))}
       </div>
       {MOCK_POSTS.map((p, i) => (
         <div key={i} style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.05)', display: 'flex', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-            <span style={{ fontSize: 10, color: '#6B93C4' }}>▲</span>
+            <ChevronUp style={{ width: 12, height: 12, color: '#6B93C4' }} />
             <span style={{ fontSize: 12, fontWeight: 700, color: '#1B6EF3' }}>{p.score}</span>
-            <span style={{ fontSize: 10, color: '#6B93C4' }}>▼</span>
+            <ChevronDown style={{ width: 12, height: 12, color: '#6B93C4' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: 11, background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.2)', borderRadius: 4, padding: '2px 7px', color: '#6AADFF', fontWeight: 700 }}>{p.flair} {p.flairLabel}</span>
+            <span style={{ fontSize: 11, background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.2)', borderRadius: 4, padding: '2px 7px', color: '#6AADFF', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <p.FlairIcon style={{ width: 10, height: 10 }} /> {p.flairLabel}
+            </span>
             <p style={{ fontSize: 13, fontWeight: 600, color: '#EEF4FF', marginTop: 6, lineHeight: 1.4 }}>{p.title}</p>
             {p.isPoll && (
               <div style={{ marginTop: 8 }}>
@@ -108,7 +144,9 @@ function StepContent({ step }) {
                 ))}
               </div>
             )}
-            <div style={{ fontSize: 11, color: '#6B93C4', marginTop: 6 }}>{p.eco} · {p.ago} · 💬 {p.comments}</div>
+            <div style={{ fontSize: 11, color: '#6B93C4', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+              {p.eco} · {p.ago} · <MessageSquare style={{ width: 10, height: 10 }} /> {p.comments}
+            </div>
           </div>
         </div>
       ))}
@@ -123,18 +161,27 @@ function StepContent({ step }) {
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 5px #00C853' }} />
             <span style={{ fontSize: 13, fontWeight: 800, color: '#EEF4FF' }}>Cobikin HQ</span>
           </div>
-          <div style={{ fontSize: 10, color: '#6B93C4', marginTop: 2 }}>💻 Technology</div>
+          <div style={{ fontSize: 10, color: '#6B93C4', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Globe style={{ width: 9, height: 9 }} /> Technology
+          </div>
         </div>
         <div style={{ fontSize: 10, fontWeight: 800, color: '#2E4D6E', padding: '0 12px 4px', textTransform: 'uppercase', letterSpacing: '.6px' }}>Channels</div>
-        {['📢 announcements', '# projects', '# dev-log', '# general'].map((ch, i) => (
-          <div key={ch} style={{ padding: '5px 12px', fontSize: 12, color: i === 0 ? '#EEF4FF' : '#7FA8D4', background: i === 0 ? 'rgba(27,110,243,.15)' : 'transparent' }}>{ch}</div>
+        {[
+          { label: 'announcements', loud: true },
+          { label: 'projects' },
+          { label: 'dev-log' },
+          { label: 'general' },
+        ].map((ch, i) => (
+          <div key={ch.label} style={{ padding: '5px 12px', fontSize: 12, color: i === 0 ? '#EEF4FF' : '#7FA8D4', background: i === 0 ? 'rgba(27,110,243,.15)' : 'transparent' }}>
+            {i === 0 ? '📢' : '#'} {ch.label}
+          </div>
         ))}
       </div>
       <div style={{ flex: 1, padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {[
-          { initials: 'SR', name: 'Sarah Reynolds', role: 'HR Manager', msg: 'Morning team 👋 Q1 reviews due Friday 5PM.', time: '9:14 AM', grad: 'linear-gradient(135deg,#1B6EF3,#00B4D8)' },
-          { initials: 'JT', name: 'James Tran', role: 'IT Support', msg: 'Server migration complete — zero downtime 🚀', time: '9:41 AM', grad: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)' },
-          { initials: 'RK', name: 'Raj Kumar', role: 'Operations', msg: 'Q1 deck ready — Revenue +34%, NPS +11pts 📊', time: '10:05 AM', grad: 'linear-gradient(135deg,#00C853,#00897B)' },
+          { initials: 'SR', name: 'Sarah Reynolds', msg: 'Morning team 👋 Q1 reviews due Friday 5PM.',          time: '9:14 AM', grad: 'linear-gradient(135deg,#1B6EF3,#00B4D8)' },
+          { initials: 'JT', name: 'James Tran',     msg: 'Server migration complete — zero downtime 🚀',        time: '9:41 AM', grad: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)' },
+          { initials: 'RK', name: 'Raj Kumar',      msg: 'Q1 deck ready — Revenue +34%, NPS +11pts',            time: '10:05 AM', grad: 'linear-gradient(135deg,#00C853,#00897B)' },
         ].map((m, i) => (
           <div key={i} style={{ display: 'flex', gap: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 8, background: m.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff', flexShrink: 0 }}>{m.initials}</div>
@@ -148,7 +195,7 @@ function StepContent({ step }) {
           </div>
         ))}
         <div style={{ fontSize: 11, color: '#2E4D6E', display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
-          <span style={{ color: '#00C853' }}>🔒</span> End-to-end encrypted
+          <Lock style={{ width: 10, height: 10, color: '#00C853' }} /> End-to-end encrypted
         </div>
       </div>
     </div>
@@ -156,19 +203,23 @@ function StepContent({ step }) {
 
   if (step === 3) return (
     <div style={{ background: 'rgba(6,13,26,.95)', borderRadius: 14, border: '1px solid rgba(255,255,255,.07)', padding: '32px', textAlign: 'center' }}>
-      <div style={{ fontSize: 16, fontWeight: 800, color: '#EEF4FF', marginBottom: 6 }}>🎙️ Huddle Active — #announcements</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: '#EEF4FF', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <Mic style={{ width: 16, height: 16, color: '#00C853' }} /> Huddle Active — #announcements
+      </div>
       <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#00C853', letterSpacing: 2, marginBottom: 28 }}>00:42</div>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 28, flexWrap: 'wrap' }}>
         {[
-          { initials: 'SR', name: 'Sarah R.', speaking: true, grad: 'linear-gradient(135deg,#1B6EF3,#00B4D8)' },
+          { initials: 'SR', name: 'Sarah R.', speaking: true,  grad: 'linear-gradient(135deg,#1B6EF3,#00B4D8)' },
           { initials: 'JT', name: 'James T.', speaking: false, grad: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)' },
-          { initials: 'YO', name: 'You', speaking: true, grad: 'linear-gradient(135deg,#7C4DFF,#F472B6)' },
+          { initials: 'YO', name: 'You',      speaking: true,  grad: 'linear-gradient(135deg,#7C4DFF,#F472B6)' },
         ].map(p => (
           <div key={p.name} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 72, height: 72, borderRadius: 14, background: p.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: '#fff', border: p.speaking ? '3px solid #00C853' : '3px solid transparent', boxShadow: p.speaking ? '0 0 20px rgba(0,200,83,.4)' : 'none', position: 'relative' }}>
               {p.initials}
-              <div style={{ position: 'absolute', bottom: -5, right: -5, width: 20, height: 20, borderRadius: '50%', background: p.speaking ? '#00C853' : '#EF5350', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, border: '2px solid #0B1628' }}>
-                {p.speaking ? '🎙' : '🔇'}
+              <div style={{ position: 'absolute', bottom: -5, right: -5, width: 20, height: 20, borderRadius: '50%', background: p.speaking ? '#00C853' : '#EF5350', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #0B1628' }}>
+                {p.speaking
+                  ? <Mic style={{ width: 10, height: 10, color: '#fff' }} />
+                  : <MicOff style={{ width: 10, height: 10, color: '#fff' }} />}
               </div>
             </div>
             <span style={{ fontSize: 12, fontWeight: 600, color: '#7FA8D4' }}>{p.name}</span>
@@ -176,12 +227,14 @@ function StepContent({ step }) {
         ))}
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-        {['🎙️', '📹', '🖥️', '📵'].map((icon, i) => (
-          <div key={i} style={{ width: 44, height: 44, borderRadius: '50%', background: i === 3 ? '#EF5350' : 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer' }}>{icon}</div>
+        {HUDDLE_CONTROLS.map(({ Icon, label, danger }) => (
+          <div key={label} title={label} style={{ width: 44, height: 44, borderRadius: '50%', background: danger ? '#EF5350' : 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <Icon style={{ width: 18, height: 18, color: '#fff' }} />
+          </div>
         ))}
       </div>
       <div style={{ fontSize: 12, color: '#2E4D6E', marginTop: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-        <span style={{ color: '#00C853' }}>🔒</span> Voice & video end-to-end encrypted
+        <Lock style={{ width: 11, height: 11, color: '#00C853' }} /> Voice &amp; video end-to-end encrypted
       </div>
     </div>
   );
@@ -192,9 +245,13 @@ function StepContent({ step }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
         {INTEGRATIONS.map(app => (
           <div key={app.name} style={{ background: app.connected ? 'rgba(0,200,83,.06)' : 'rgba(255,255,255,.04)', border: `1px solid ${app.connected ? 'rgba(0,200,83,.25)' : 'rgba(255,255,255,.07)'}`, borderRadius: 10, padding: '12px 10px', textAlign: 'center' }}>
-            <div style={{ fontSize: 22, marginBottom: 6 }}>{app.icon}</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+              <app.Icon style={{ width: 22, height: 22, color: app.connected ? '#00C853' : '#7FA8D4' }} />
+            </div>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#EEF4FF', marginBottom: 4 }}>{app.name}</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: app.connected ? '#00C853' : '#6B93C4' }}>{app.connected ? '✓ Connected' : '+ Connect'}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: app.connected ? '#00C853' : '#6B93C4', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+              {app.connected ? <><Check style={{ width: 9, height: 9 }} /> Connected</> : '+ Connect'}
+            </div>
           </div>
         ))}
       </div>
@@ -203,7 +260,9 @@ function StepContent({ step }) {
 
   if (step === 5) return (
     <div style={{ background: '#0B1628', borderRadius: 14, border: '1px solid rgba(255,255,255,.07)', padding: '20px' }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 4 }}>🤝 External · B2B Spaces</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Handshake style={{ width: 14, height: 14, color: '#6AADFF' }} /> External · B2B Spaces
+      </div>
       <div style={{ fontSize: 12, color: '#6B93C4', marginBottom: 16 }}>Cobikin HQ · 3 active external partners</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {B2B_SPACES.map(b => (
@@ -217,8 +276,9 @@ function StepContent({ step }) {
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(0,200,83,.05)', border: '1px solid rgba(0,200,83,.15)', borderRadius: 8, fontSize: 12, color: '#7FA8D4' }}>
-        🔒 Each company only sees their own shared channels. Your internal team is never exposed.
+      <div style={{ marginTop: 14, padding: '10px 12px', background: 'rgba(0,200,83,.05)', border: '1px solid rgba(0,200,83,.15)', borderRadius: 8, fontSize: 12, color: '#7FA8D4', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Lock style={{ width: 11, height: 11, color: '#00C853', flexShrink: 0 }} />
+        Each company only sees their own shared channels. Your internal team is never exposed.
       </div>
     </div>
   );
@@ -226,17 +286,25 @@ function StepContent({ step }) {
   if (step === 6) return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
       {[
-        { name: 'Free', price: '$0', period: 'forever', features: ['Browse 9 ecosystems', '3 posts/month', 'Unlimited commenting'], highlight: false },
-        { name: 'Pro', price: '$7.99', period: '/user/mo', features: ['Unlimited posting', 'Private workspace', 'Voice huddles', 'E2E DMs'], highlight: true, badge: '⭐ Popular' },
-        { name: 'Annual', price: '$6.40', period: '/user/mo · save 20%', features: ['Everything in Pro', '2 months free', '100 GB storage'], highlight: false, badge: '💚 Best value' },
-        { name: 'Enterprise', price: '$14', period: '/user/mo', features: ['10 workspaces', 'SSO / SAML', 'Audit logs', '99.9% SLA'], highlight: false, badge: '🏢' },
+        { name: 'Free',       price: '$0',    period: 'forever',         features: ['Browse 9 ecosystems', '3 posts/month', 'Unlimited commenting'], highlight: false },
+        { name: 'Pro',        price: '$7.99', period: '/user/mo',        features: ['Unlimited posting', 'Private workspace', 'Voice huddles', 'E2E DMs'], highlight: true,  BadgeIcon: Star,     badgeLabel: 'Popular',    badgeColor: '#6AADFF' },
+        { name: 'Annual',     price: '$6.40', period: '/user/mo · save 20%', features: ['Everything in Pro', '2 months free', '100 GB storage'],    highlight: false, BadgeIcon: Leaf,     badgeLabel: 'Best value', badgeColor: '#00C853' },
+        { name: 'Enterprise', price: '$14',   period: '/user/mo',        features: ['10 workspaces', 'SSO / SAML', 'Audit logs', '99.9% SLA'],     highlight: false, BadgeIcon: Building2, badgeLabel: 'Enterprise', badgeColor: '#B39DDB' },
       ].map(p => (
         <div key={p.name} style={{ background: p.highlight ? 'rgba(27,110,243,.1)' : 'rgba(255,255,255,.04)', border: p.highlight ? '1px solid rgba(27,110,243,.35)' : '1px solid rgba(255,255,255,.07)', borderRadius: 12, padding: '14px' }}>
-          {p.badge && <div style={{ fontSize: 10, fontWeight: 800, color: '#6AADFF', marginBottom: 6 }}>{p.badge}</div>}
+          {p.BadgeIcon && (
+            <div style={{ fontSize: 10, fontWeight: 800, color: p.badgeColor, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <p.BadgeIcon style={{ width: 10, height: 10 }} /> {p.badgeLabel}
+            </div>
+          )}
           <div style={{ fontSize: 14, fontWeight: 800, color: '#EEF4FF' }}>{p.name}</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#EEF4FF', marginTop: 4 }}>{p.price}<span style={{ fontSize: 11, fontWeight: 400, color: '#6B93C4' }}> {p.period}</span></div>
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {p.features.map(f => <div key={f} style={{ fontSize: 11, color: '#7FA8D4' }}>✓ {f}</div>)}
+            {p.features.map(f => (
+              <div key={f} style={{ fontSize: 11, color: '#7FA8D4', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Check style={{ width: 10, height: 10, color: '#00C853', flexShrink: 0 }} /> {f}
+              </div>
+            ))}
           </div>
         </div>
       ))}
@@ -268,7 +336,9 @@ export default function Demo() {
         <Link to="/home">
           <img src="https://media.base44.com/images/public/69ebbbf6d42430b1fdaa3ecc/5d21bc6b3_bbs_logo2-removebg-preview1.png" alt="BB" style={{ height: 36 }} />
         </Link>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#6AADFF' }}>🎬 Interactive Product Demo</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#6AADFF', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Clapperboard style={{ width: 14, height: 14 }} /> Interactive Product Demo
+        </span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
           <Link to="/home" style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid rgba(255,255,255,.12)', background: 'transparent', color: '#7FA8D4', fontSize: 13, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>← Back to site</Link>
           <button onClick={() => navigateToLogin()} style={{ padding: '6px 16px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Get started free</button>
@@ -290,12 +360,16 @@ export default function Demo() {
                   borderLeft: currentStep === s.id ? '3px solid #1B6EF3' : '3px solid transparent',
                 }}
               >
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{s.icon}</span>
+                <s.Icon style={{ width: 16, height: 16, flexShrink: 0, color: currentStep === s.id ? '#1B6EF3' : '#7FA8D4', marginTop: 1 }} />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: currentStep === s.id ? '#EEF4FF' : '#7FA8D4' }}>{s.subtitle}</div>
-                  <div style={{ fontSize: 10, color: '#2E4D6E', marginTop: 1 }}>⏱ {s.duration}</div>
+                  <div style={{ fontSize: 10, color: '#2E4D6E', marginTop: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Clock style={{ width: 9, height: 9 }} /> {s.duration}
+                  </div>
                 </div>
-                {currentStep > s.id && <span style={{ marginLeft: 'auto', fontSize: 10, color: '#00C853' }}>✓</span>}
+                {currentStep > s.id && (
+                  <Check style={{ marginLeft: 'auto', width: 12, height: 12, color: '#00C853' }} />
+                )}
               </button>
             ))}
           </div>
@@ -315,8 +389,9 @@ export default function Demo() {
             <div style={{ fontSize: 12, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 8 }}>
               Step {currentStep} of {STEPS.length}
             </div>
-            <h1 style={{ fontSize: 'clamp(20px,2.5vw,28px)', fontWeight: 800, color: '#EEF4FF', letterSpacing: '-0.5px', lineHeight: 1.2, marginBottom: 10 }}>
-              {step.icon} {step.title}
+            <h1 style={{ fontSize: 'clamp(20px,2.5vw,28px)', fontWeight: 800, color: '#EEF4FF', letterSpacing: '-0.5px', lineHeight: 1.2, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <step.Icon style={{ width: 26, height: 26, color: '#1B6EF3', flexShrink: 0 }} />
+              {step.title}
             </h1>
             <p style={{ fontSize: 15, color: '#7FA8D4', lineHeight: 1.65 }}>{step.desc}</p>
           </div>
@@ -354,7 +429,7 @@ export default function Demo() {
                 onClick={() => navigateToLogin()}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 24px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#00C853,#00897B)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,200,83,.4)' }}
               >
-                🎉 Get started free
+                <PartyPopper style={{ width: 15, height: 15 }} /> Get started free
               </button>
             )}
           </div>

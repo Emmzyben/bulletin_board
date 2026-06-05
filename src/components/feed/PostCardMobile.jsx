@@ -133,7 +133,7 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
       }}>
         <span>👍 {post.upvotes || 0}</span>
         <span>💬 {post.comment_count || 0}</span>
-        <span>💾 {post.saves_count || 0}</span>
+        <span>� {post.saves_count || 0}</span>
       </div>
 
       {/* Actions - Touch-friendly buttons */}

@@ -173,7 +173,7 @@ export default function Leaderboard() {
 
         {activeEcosystem !== 'all' && selectedEco && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, padding: '10px 16px', background: 'rgba(27,110,243,.08)', border: '1px solid rgba(27,110,243,.2)', borderRadius: 10 }}>
-            <span style={{ fontSize: 18 }}>{selectedEco.icon}</span>
+            <span style={{ fontSize: 18 }}>{(() => { const Icon = selectedEco.icon; return <Icon size={20} />; })()}</span>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#6AADFF' }}>
               Top contributors in {selectedEco.label}
             </span>
@@ -221,7 +221,7 @@ export default function Leaderboard() {
                   <div style={{ background: 'rgba(27,110,243,.12)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, color: '#6AADFF' }}>
                     {a.score.toLocaleString()} pts
                   </div>
-                  <p style={{ fontSize: 11, color: textMuted }}>{karmaLevel.badge} {karmaLevel.level}</p>
+                  <p style={{ fontSize: 11, color: textMuted, display: 'flex', alignItems: 'center', gap: 4 }}><karmaLevel.icon size={12} /> {karmaLevel.level}</p>
                 </div>
               );
             })}
@@ -287,7 +287,7 @@ export default function Leaderboard() {
                       </p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 11, color: textMuted }}>@{a.email.split('@')[0]}</span>
-                        <span style={{ fontSize: 10, color: '#B39DDB', fontWeight: 700 }}>{karmaLevel.badge} {karmaLevel.level}</span>
+                        <span style={{ fontSize: 10, color: '#B39DDB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><karmaLevel.icon size={12} /> {karmaLevel.level}</span>
                       </div>
                     </div>
                   </div>

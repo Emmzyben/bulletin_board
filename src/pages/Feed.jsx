@@ -8,7 +8,7 @@ import NewsCard from '../components/feed/NewsCard';
 import FeedLeftSidebar from '../components/feed/FeedLeftSidebar';
 import FeedRightSidebar from '../components/feed/FeedRightSidebar';
 import AdvancedSearch from '../components/feed/AdvancedSearch';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Bookmark, Inbox } from 'lucide-react';
 
 export default function Feed() {
   const { user, setShowCreatePost, mobileMenuOpen, navigateToLogin } = useOutletContext();
@@ -185,7 +185,7 @@ export default function Feed() {
           {/* Saved view header */}
           {isSavedView && (
             <div className="flex items-center gap-2 mb-4 px-1">
-              <span className="text-xl">🔖</span>
+              <Bookmark size={20} />
               <div>
                 <h2 className="text-lg font-bold text-slate-100">Saved Posts</h2>
                 <p className="text-xs text-slate-500">{savedIds.length} post{savedIds.length !== 1 ? 's' : ''} saved · private to you</p>
@@ -224,7 +224,7 @@ export default function Feed() {
             </div>
           ) : filteredPosts.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-2xl mb-3">{isSavedView ? '🔖' : '📭'}</p>
+              <div className="text-4xl mb-3 flex justify-center">{isSavedView ? <Bookmark size={40} /> : <Inbox size={40} />}</div>
               <p className="text-muted-foreground">
                 {isSavedView ? 'No saved posts yet — tap the bookmark icon on any post to save it here.' : 'No posts yet. Be the first to post!'}
               </p>

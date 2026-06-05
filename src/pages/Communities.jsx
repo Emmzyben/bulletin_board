@@ -134,9 +134,9 @@ export default function Communities() {
               >
                 <div className="flex items-start gap-4">
                   {/* Icon */}
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
                     style={{ background: 'rgba(27,110,243,0.12)', border: '1px solid rgba(27,110,243,0.2)' }}>
-                    {eco.icon}
+                    {(() => { const Icon = eco.icon; return <Icon size={20} />; })()}
                   </div>
 
                   {/* Info */}

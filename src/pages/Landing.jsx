@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { Cpu, Stethoscope, Building2, GraduationCap, Building, Home, Hotel, Briefcase, Music, Globe, Handshake, Mic, BarChart3, Wrench, Clipboard, Lock, MapPin, Star, Heart, MessageSquare, Newspaper, Megaphone } from 'lucide-react';
 
 const S = {
   page: {
@@ -21,15 +22,15 @@ const NAV_LINKS = [
 ];
 
 const ECOSYSTEMS = [
-  { icon: '💻', label: 'Technology', members: '847', img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&auto=format&fit=crop' },
-  { icon: '🏥', label: 'Healthcare', members: '634', img: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&auto=format&fit=crop' },
-  { icon: '🏢', label: 'Corporate', members: '521', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&auto=format&fit=crop' },
-  { icon: '🎓', label: 'Education', members: '412', img: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&auto=format&fit=crop' },
-  { icon: '🏛️', label: 'Government', members: '289', img: 'https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=400&auto=format&fit=crop' },
-  { icon: '🏠', label: 'Real Estate', members: '367', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop' },
-  { icon: '🏨', label: 'Hospitality', members: '198', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&auto=format&fit=crop' },
-  { icon: '💼', label: 'Careers', members: '756', img: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400&auto=format&fit=crop' },
-  { icon: '🎬', label: 'Entertainment', members: '234', img: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&auto=format&fit=crop' },
+  { icon: Cpu, label: 'Technology', members: '847', img: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&auto=format&fit=crop' },
+  { icon: Stethoscope, label: 'Healthcare', members: '634', img: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&auto=format&fit=crop' },
+  { icon: Building2, label: 'Corporate', members: '521', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&auto=format&fit=crop' },
+  { icon: GraduationCap, label: 'Education', members: '412', img: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&auto=format&fit=crop' },
+  { icon: Building, label: 'Government', members: '289', img: 'https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=400&auto=format&fit=crop' },
+  { icon: Home, label: 'Real Estate', members: '367', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&auto=format&fit=crop' },
+  { icon: Hotel, label: 'Hospitality', members: '198', img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&auto=format&fit=crop' },
+  { icon: Briefcase, label: 'Careers', members: '756', img: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400&auto=format&fit=crop' },
+  { icon: Music, label: 'Entertainment', members: '234', img: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&auto=format&fit=crop' },
 ];
 
 const TESTIMONIALS = [
@@ -47,17 +48,17 @@ const PLANS = [
   {
     name: 'Pro', price: '$7.99', period: '/ user / month', cta: 'Start free trial', ctaAction: 'signup',
     features: ['Unlimited GP Feed posting', 'Private workspace & channels', 'Voice & video huddles', 'E2E encrypted DMs', 'File sharing · 50 GB', 'App integrations'],
-    highlight: true, badge: '⭐ Most popular',
+    highlight: true, badge: { icon: Star, text: 'Most popular' },
   },
   {
     name: 'Pro Annual', price: '$10', period: '/ user / month', cta: 'Get annual plan', ctaAction: 'signup',
     features: ['Everything in Pro', '2 months free', '100 GB file storage', 'Dedicated account manager', 'Custom workspace branding'],
-    highlight: false, badge: '💚 Best value',
+    highlight: false, badge: { icon: Heart, text: 'Best value' },
   },
   {
     name: 'Enterprise', price: '$14', period: '/ user / month', cta: 'Contact sales', ctaAction: 'support',
     features: ['Up to 10 workspaces', 'SSO / SAML', 'Advanced audit logs', '500 GB shared storage', '99.9% uptime SLA'],
-    highlight: false, badge: '🏢',
+    highlight: false, badge: { icon: Building2, text: '' },
   },
 ];
 
@@ -243,40 +244,7 @@ export default function Landing() {
         <div style={{ position: 'absolute', left: `${blob2X}%`, top: `${blob2Y}%`, width: 380, height: 380, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,200,83,.12),transparent 70%)', pointerEvents: 'none', zIndex: 1, filter: 'blur(2px)' }} />
         <div style={{ position: 'absolute', left: `${blob3X}%`, top: `${blob3Y}%`, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle,rgba(124,77,255,.12),transparent 70%)', pointerEvents: 'none', zIndex: 1, filter: 'blur(2px)' }} />
 
-        <div style={{ position: 'absolute', left: '3%', top: '32%', zIndex: 2, animation: 'floatA 5s ease-in-out infinite' }}>
-          <div style={{ width: 170, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,.13)', boxShadow: '0 24px 60px rgba(0,0,0,.7)', transform: 'rotate(-4deg)' }}>
-            <img src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400&auto=format&fit=crop" alt="" style={{ width: '100%', height: 110, objectFit: 'cover' }} />
-            <div style={{ background: '#0B1628', padding: '8px 10px' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#6AADFF' }}>💬 Discussion</div>
-              <div style={{ fontSize: 11, color: '#7FA8D4', marginTop: 2 }}>AI in enterprise workflows</div>
-            </div>
-          </div>
-        </div>
-        <div style={{ position: 'absolute', right: '3%', top: '28%', zIndex: 2, animation: 'floatB 6s ease-in-out infinite' }}>
-          <div style={{ width: 170, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,.13)', boxShadow: '0 24px 60px rgba(0,0,0,.7)', transform: 'rotate(4deg)' }}>
-            <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&auto=format&fit=crop" alt="" style={{ width: '100%', height: 110, objectFit: 'cover' }} />
-            <div style={{ background: '#0B1628', padding: '8px 10px' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#00C853' }}>🏢 Workspace</div>
-              <div style={{ fontSize: 11, color: '#7FA8D4', marginTop: 2 }}>Cobikin HQ · 5 online</div>
-            </div>
-          </div>
-        </div>
-        <div style={{ position: 'absolute', left: '2%', bottom: '18%', zIndex: 2, animation: 'floatB 7s ease-in-out infinite 1s' }}>
-          <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,.1)', boxShadow: '0 16px 40px rgba(0,0,0,.6)', background: '#0B1628', padding: '10px 14px', width: 158 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 6px #00C853' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#EEF4FF' }}>2,400+ online</span>
-            </div>
-            <div style={{ fontSize: 10, color: '#6B93C4', marginTop: 4 }}>across 9 ecosystems</div>
-          </div>
-        </div>
-        <div style={{ position: 'absolute', right: '2%', bottom: '22%', zIndex: 2, animation: 'floatA 8s ease-in-out infinite 0.5s' }}>
-          <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(0,200,83,.2)', boxShadow: '0 16px 40px rgba(0,0,0,.6)', background: '#081A10', padding: '10px 14px', width: 158 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#00C853', marginBottom: 4 }}>🔒 E2E Encrypted</div>
-            <div style={{ fontSize: 10, color: '#4A8A5A' }}>All workspace messages protected</div>
-          </div>
-        </div>
-
+       
         <div style={{ position: 'relative', zIndex: 3, animation: 'fadeInUp .8s ease both' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.25)', borderRadius: 20, padding: '6px 16px', fontSize: 12, fontWeight: 700, color: '#6AADFF', marginBottom: 28 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', display: 'inline-block', boxShadow: '0 0 6px #00C853', animation: 'blink 2s step-end infinite' }} />
@@ -289,7 +257,7 @@ export default function Landing() {
             and private workspace
           </h1>
 
-          <p style={{ fontSize: 'clamp(15px,2vw,20px)', color: '#7FA8D4', maxWidth: 640, lineHeight: 1.65, marginBottom: 40 }}>
+          <p style={{ fontSize: 'clamp(15px,2vw,20px)', color: '#7FA8D4', maxWidth: 640, lineHeight: 1.65, marginBottom: 40,textAlign: 'center' }}>
             Bulletin Board uniquely combines a public professional community feed with a private, encrypted team workspace — in one platform built for professionals. 9 industry ecosystems. E2E encrypted. Flat pricing.
           </p>
 
@@ -341,23 +309,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section style={{ padding: '0 24px 80px' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', borderRadius: 20, overflow: 'hidden', position: 'relative', height: 260 }}>
-          <img
-            src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1400&auto=format&fit=crop&q=80"
-            alt="Team collaboration"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg,rgba(11,22,40,.85) 0%,rgba(27,110,243,.3) 100%)' }} />
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 24px' }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 12 }}>One Platform. Two Layers.</div>
-            <h2 style={{ fontSize: 'clamp(22px,3.5vw,40px)', fontWeight: 900, color: '#EEF4FF', letterSpacing: '-0.8px', maxWidth: 600 }}>
-              The community feed that builds your reputation. The workspace that protects your business.
-            </h2>
-          </div>
-        </div>
-      </section>
-
+    
       <section id="features" style={{ padding: '80px 24px', background: 'rgba(0,0,0,.15)' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
@@ -370,17 +322,20 @@ export default function Landing() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
             {[
-              { step: '01', icon: '🌐', title: 'Discover on the GP Feed', desc: 'Browse posts, polls, and insights across 9 professional ecosystems — no account needed. Upvote, comment, and build your professional reputation publicly.' },
-              { step: '02', icon: '🏢', title: 'Collaborate in your Workspace', desc: 'Create or join a private, E2E encrypted workspace for your team. Channels, DMs, voice huddles, file sharing, and app integrations — all in one place.' },
-              { step: '03', icon: '🤝', title: 'Connect B2B across companies', desc: 'Invite clients, partners, and investors into shared B2B spaces within your workspace. Each company gets their own private area — fully isolated.' },
-            ].map(s => (
+              { step: '01', icon: Globe, title: 'Discover on the GP Feed', desc: 'Browse posts, polls, and insights across 9 professional ecosystems — no account needed. Upvote, comment, and build your professional reputation publicly.' },
+              { step: '02', icon: Building2, title: 'Collaborate in your Workspace', desc: 'Create or join a private, E2E encrypted workspace for your team. Channels, DMs, voice huddles, file sharing, and app integrations — all in one place.' },
+              { step: '03', icon: Handshake, title: 'Connect B2B across companies', desc: 'Invite clients, partners, and investors into shared B2B spaces within your workspace. Each company gets their own private area — fully isolated.' },
+            ].map(s => {
+              const StepIcon = s.icon;
+              return (
               <div key={s.step} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 16, padding: '28px 24px' }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#2E4D6E', marginBottom: 12, letterSpacing: '.8px' }}>Step {s.step}</div>
-                <div style={{ fontSize: 32, marginBottom: 14 }}>{s.icon}</div>
+                <div style={{ fontSize: 32, marginBottom: 14 }}><StepIcon size={32} /></div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: '#EEF4FF', marginBottom: 10 }}>{s.title}</h3>
                 <p style={{ fontSize: 14, color: '#7FA8D4', lineHeight: 1.65 }}>{s.desc}</p>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>
@@ -388,7 +343,7 @@ export default function Landing() {
       <section style={{ padding: '80px 24px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>🌐 Public GP Feed</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}><Globe size={14} style={{display: 'inline-block', marginRight: 6}} /> Public GP Feed</div>
             <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 800, color: '#EEF4FF', letterSpacing: '-0.5px', marginBottom: 16, lineHeight: 1.2 }}>A professional community that works for you 24/7</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
@@ -407,10 +362,13 @@ export default function Landing() {
           </div>
           <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 16, overflow: 'hidden' }}>
             {[
-              { score: 247, flair: '💬 Discussion', title: 'The rise of agentic AI in enterprise workflows — are teams ready?', eco: '💻 Technology', ago: '2h ago' },
-              { score: 89, flair: '💼 Job', title: '[Hiring] Senior Full-Stack Engineer · Remote · $140K–$180K', eco: '💼 Careers', ago: '3h ago' },
-              { score: 34, flair: '📰 News', title: 'Healthcare AI diagnostics receive FDA clearance for clinical use', eco: '🏥 Healthcare', ago: '4h ago' },
-            ].map((p, i) => (
+              { score: 247, flairIcon: MessageSquare, flairLabel: 'Discussion', title: 'The rise of agentic AI in enterprise workflows — are teams ready?', ecoIcon: Cpu, ecoLabel: 'Technology', ago: '2h ago' },
+              { score: 89, flairIcon: Briefcase, flairLabel: 'Job', title: '[Hiring] Senior Full-Stack Engineer · Remote · $140K–$180K', ecoIcon: Briefcase, ecoLabel: 'Careers', ago: '3h ago' },
+              { score: 34, flairIcon: Newspaper, flairLabel: 'News', title: 'Healthcare AI diagnostics receive FDA clearance for clinical use', ecoIcon: Stethoscope, ecoLabel: 'Healthcare', ago: '4h ago' },
+            ].map((p, i) => {
+              const FlairIcon = p.flairIcon;
+              const EcoIcon = p.ecoIcon;
+              return (
               <div key={i} style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.06)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
                   <span style={{ fontSize: 10, color: '#6B93C4' }}>▲</span>
@@ -418,12 +376,13 @@ export default function Landing() {
                   <span style={{ fontSize: 10, color: '#6B93C4' }}>▼</span>
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: '#6AADFF', fontWeight: 700, marginBottom: 4 }}>{p.flair}</div>
+                  <div style={{ fontSize: 11, color: '#6AADFF', fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><FlairIcon size={12} /> {p.flairLabel}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#EEF4FF', lineHeight: 1.4, marginBottom: 4 }}>{p.title}</div>
-                  <div style={{ fontSize: 11, color: '#6B93C4' }}>{p.eco} · {p.ago}</div>
+                  <div style={{ fontSize: 11, color: '#6B93C4', display: 'flex', alignItems: 'center', gap: 4 }}><EcoIcon size={12} /> {p.ecoLabel} · {p.ago}</div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>
@@ -434,13 +393,22 @@ export default function Landing() {
             <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00C853', boxShadow: '0 0 6px #00C853' }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF' }}>Cobikin HQ</span>
-              <span style={{ fontSize: 11, color: '#6B93C4', marginLeft: 4 }}>💻 Technology · Private</span>
+              <span style={{ fontSize: 11, color: '#6B93C4', marginLeft: 4, display: 'flex', alignItems: 'center', gap: 4 }}><Cpu size={12} /> Technology · Private</span>
             </div>
             <div style={{ display: 'flex' }}>
               <div style={{ width: 120, borderRight: '1px solid rgba(255,255,255,.07)', padding: '10px 0' }}>
-                {['📢 announcements', '# general', '# dev-log'].map(ch => (
-                  <div key={ch} style={{ padding: '5px 12px', fontSize: 12, color: '#7FA8D4' }}>{ch}</div>
-                ))}
+                {[
+                  { icon: Megaphone, label: 'announcements' },
+                  { icon: null, label: 'general' },
+                  { icon: null, label: 'dev-log' },
+                ].map(ch => {
+                  const ChannelIcon = ch.icon;
+                  return (
+                  <div key={ch.label} style={{ padding: '5px 12px', fontSize: 12, color: '#7FA8D4', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {ch.icon ? <ChannelIcon size={12} /> : '#'} {ch.label}
+                  </div>
+                );
+                })}
               </div>
               <div style={{ flex: 1, padding: '12px' }}>
                 {[
@@ -459,23 +427,29 @@ export default function Landing() {
               </div>
             </div>
             <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,.07)', background: 'rgba(0,0,0,.2)', fontSize: 11, color: '#2E4D6E', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ color: '#00C853' }}>🔒</span> End-to-end encrypted
+              <Lock size={14} style={{color: '#00C853'}} /> End-to-end encrypted
             </div>
           </div>
 
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}>🏢 Private Workspace</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12 }}><Building2 size={14} style={{display: 'inline-block', marginRight: 6}} /> Private Workspace</div>
             <h2 style={{ fontSize: 'clamp(24px,3vw,36px)', fontWeight: 800, color: '#EEF4FF', letterSpacing: '-0.5px', marginBottom: 16, lineHeight: 1.2 }}>Everything your team needs — in one encrypted space</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                '✓ 🎙️ Voice & video huddles — E2E encrypted, no Zoom needed',
-                '✓ 📊 In-channel polls — make team decisions fast',
-                '✓ 🔧 App integrations — Google Drive, Asana, GitHub & more',
-                '✓ 📋 Management directory — team profiles, roles, and status',
-                '✓ 🤝 B2B spaces — invite clients & partners securely',
-              ].map(f => (
-                <div key={f} style={{ fontSize: 14, color: '#7FA8D4', lineHeight: 1.5 }}>{f}</div>
-              ))}
+                { icon: Mic, text: 'Voice & video huddles — E2E encrypted, no Zoom needed' },
+                { icon: BarChart3, text: 'In-channel polls — make team decisions fast' },
+                { icon: Wrench, text: 'App integrations — Google Drive, Asana, GitHub & more' },
+                { icon: Clipboard, text: 'Management directory — team profiles, roles, and status' },
+                { icon: Handshake, text: 'B2B spaces — invite clients & partners securely' },
+              ].map((f, i) => {
+                const FeatureIcon = f.icon;
+                return (
+                <div key={i} style={{ fontSize: 14, color: '#7FA8D4', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <FeatureIcon size={16} style={{marginTop: 2, flexShrink: 0}} />
+                  <span>{f.text}</span>
+                </div>
+              );
+              })}
             </div>
             <button onClick={() => navigateToLogin()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 24, padding: '10px 22px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 12px rgba(27,110,243,.4)' }}>
               Create your workspace →
@@ -499,7 +473,7 @@ export default function Landing() {
                 <div style={{ height: 90, overflow: 'hidden', position: 'relative' }}>
                   <img src={eco.img} alt={eco.label} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: '.3s' }} />
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(6,13,26,.9))' }} />
-                  <div style={{ position: 'absolute', bottom: 6, left: 0, right: 0, fontSize: 22 }}>{eco.icon}</div>
+                  <div style={{ position: 'absolute', bottom: 6, left: 0, right: 0, fontSize: 22, display: 'flex', justifyContent: 'center' }}>{(() => { const Icon = eco.icon; return <Icon size={22} />; })()}</div>
                 </div>
                 <div style={{ padding: '10px 12px 14px' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 3 }}>{eco.label}</div>
@@ -553,7 +527,12 @@ export default function Landing() {
                 boxShadow: plan.highlight ? '0 0 40px rgba(27,110,243,.12)' : 'none',
               }}>
                 {plan.badge && (
-                  <div style={{ fontSize: 11, fontWeight: 800, color: plan.highlight ? '#6AADFF' : '#6B93C4', marginBottom: 12 }}>{plan.badge}</div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: plan.highlight ? '#6AADFF' : '#6B93C4', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {(() => {
+                      const BadgeIcon = plan.badge.icon;
+                      return <><BadgeIcon size={12} /> {plan.badge.text}</>
+                    })()}
+                  </div>
                 )}
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#EEF4FF', marginBottom: 8 }}>{plan.name}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
@@ -609,8 +588,8 @@ export default function Landing() {
         <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 700, color: '#4A6A8A' }}>
           Bulletin Board is a product of <span style={{ color: '#6AADFF' }}>Cobikin Solutions LLC</span>
         </div>
-        <div style={{ marginBottom: 12, fontSize: 12, color: '#2E4D6E' }}>
-          📍 Houston, Texas, USA
+        <div style={{ marginBottom: 12, fontSize: 12, color: '#2E4D6E', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <MapPin size={14} /> Houston, Texas, USA
         </div>
         © 2026 Cobikin Solutions LLC · All rights reserved ·{' '}
         <Link to="/support" style={{ color: '#6B93C4', textDecoration: 'none' }}>Support</Link> ·{' '}

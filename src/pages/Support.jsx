@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, MessageCircle, Activity, CheckCircle2, Search, ChevronRight, BookOpen, Mail } from 'lucide-react';
+import { Send, MessageCircle, Activity, CheckCircle2, Search, ChevronRight, BookOpen, Mail, Rocket, Building2, Globe, Handshake, CreditCard, Lock, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
 
@@ -11,12 +11,12 @@ const S = {
 };
 
 const FAQ_CATEGORIES = [
-  { name: 'Getting Started', count: 4, icon: '🚀' },
-  { name: 'Workspaces', count: 3, icon: '🏢' },
-  { name: 'GP Feed', count: 3, icon: '🌐' },
-  { name: 'B2B Spaces', count: 3, icon: '🤝' },
-  { name: 'Billing', count: 3, icon: '💳' },
-  { name: 'Security', count: 2, icon: '🔐' },
+  { name: 'Getting Started', count: 4, icon: Rocket },
+  { name: 'Workspaces', count: 3, icon: Building2 },
+  { name: 'GP Feed', count: 3, icon: Globe },
+  { name: 'B2B Spaces', count: 3, icon: Handshake },
+  { name: 'Billing', count: 3, icon: CreditCard },
+  { name: 'Security', count: 2, icon: Lock },
 ];
 
 const STATUS_ITEMS = [
@@ -29,10 +29,10 @@ const STATUS_ITEMS = [
 ];
 
 const TABS = [
-  { id: 'help', icon: '📚', label: 'Help Center' },
-  { id: 'ticket', icon: '📩', label: 'Submit Ticket' },
-  { id: 'chat', icon: '💬', label: 'Live Chat' },
-  { id: 'status', icon: '⚡', label: 'System Status' },
+  { id: 'help', icon: BookOpen, label: 'Help Center' },
+  { id: 'ticket', icon: Mail, label: 'Submit Ticket' },
+  { id: 'chat', icon: MessageCircle, label: 'Live Chat' },
+  { id: 'status', icon: Zap, label: 'System Status' },
 ];
 
 export default function Support() {
@@ -91,35 +91,41 @@ export default function Support() {
         </div>
 
         <div style={{ display: 'flex', gap: 4, marginBottom: 28, borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-          {TABS.map(t => (
+          {TABS.map(t => {
+            const TabIcon = t.icon;
+            return (
             <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
               padding: '10px 18px', border: 'none', background: 'transparent', cursor: 'pointer',
               fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500,
               color: activeTab === t.id ? '#EEF4FF' : '#7FA8D4',
               borderBottom: activeTab === t.id ? '2px solid #1B6EF3' : '2px solid transparent',
-              whiteSpace: 'nowrap', transition: '.15s',
-            }}>{t.icon} {t.label}</button>
-          ))}
+              whiteSpace: 'nowrap', transition: '.15s', display: 'flex', alignItems: 'center', gap: 6,
+            }}><TabIcon size={16} /> {t.label}</button>
+          );
+          })}
         </div>
 
         {activeTab === 'help' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 14 }}>
-            {FAQ_CATEGORIES.map(cat => (
+            {FAQ_CATEGORIES.map(cat => {
+              const CategoryIcon = cat.icon;
+              return (
               <div key={cat.name} style={{ ...S.card, padding: '20px', cursor: 'pointer', transition: '.15s' }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(27,110,243,.35)'; e.currentTarget.style.background = 'rgba(27,110,243,.06)'; }}
                 onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)'; e.currentTarget.style.background = 'rgba(255,255,255,.04)'; }}
               >
-                <div style={{ fontSize: 24, marginBottom: 10 }}>{cat.icon}</div>
+                <div style={{ fontSize: 24, marginBottom: 10 }}><CategoryIcon size={28} /></div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 4 }}>{cat.name}</div>
                 <div style={{ fontSize: 12, color: '#6B93C4' }}>{cat.count} articles</div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
 
         {activeTab === 'ticket' && (
           <div style={{ ...S.card, padding: '28px' }}>
-            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#EEF4FF', marginBottom: 24 }}>📩 Submit a Support Ticket</h3>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#EEF4FF', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}><Mail size={20} /> Submit a Support Ticket</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <label style={S.label}>Name *</label>
@@ -166,7 +172,7 @@ export default function Support() {
 
         {activeTab === 'chat' && (
           <div style={{ ...S.card, padding: '48px', textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
+            <div style={{ fontSize: 48, marginBottom: 16 }}><MessageCircle size={48} /></div>
             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#EEF4FF', marginBottom: 8 }}>Live Chat Support</h3>
             <p style={{ fontSize: 14, color: '#6B93C4', marginBottom: 4 }}>Average response: under 2 minutes</p>
             <p style={{ fontSize: 14, color: '#6B93C4', marginBottom: 20 }}>3 agents online now</p>

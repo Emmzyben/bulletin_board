@@ -68,24 +68,35 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
       <div style={sideCard}>
         <span style={secLabel}>Ecosystems</span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {[{ id: null, label: '🌐 All Ecosystems' }, ...ECOSYSTEMS.map(e => ({ id: e.id, label: `${e.icon} ${e.label}` }))].map(eco => {
-            const active = activeEcosystem === eco.id;
+          <button
+            onClick={() => setActiveEcosystem(null)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px',
+              borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13,
+              fontWeight: !activeEcosystem ? 600 : 500,
+              background: !activeEcosystem ? (isDark ? 'rgba(27,110,243,.15)' : 'rgba(27,110,243,.1)') : 'transparent',
+              color: !activeEcosystem ? '#4F8AF4' : (isDark ? '#7FA8D4' : '#475569'),
+            }}
+          >
+            🌐 All Ecosystems
+          </button>
+          {ECOSYSTEMS.map(e => {
+            const EcoIcon = e.icon;
+            const active = activeEcosystem === e.id;
             return (
               <button
-                key={eco.id || 'all'}
-                onClick={() => setActiveEcosystem(eco.id)}
+                key={e.id}
+                onClick={() => setActiveEcosystem(e.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px',
                   borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13,
                   fontWeight: active ? 600 : 500,
-                  color: active ? (isDark ? '#EEF4FF' : '#1F3A5F') : (isDark ? '#7FA8D4' : '#475569'),
-                  background: active ? 'rgba(27,110,243,.14)' : 'transparent',
-                  transition: '.15s', textAlign: 'left',
+                  background: active ? (isDark ? 'rgba(27,110,243,.15)' : 'rgba(27,110,243,.1)') : 'transparent',
+                  color: active ? '#4F8AF4' : (isDark ? '#7FA8D4' : '#475569'),
                 }}
-                onMouseOver={e => { if (!active) { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)'; e.currentTarget.style.color = isDark ? '#EEF4FF' : '#1F3A5F'; } }}
-                onMouseOut={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isDark ? '#7FA8D4' : '#475569'; } }}
               >
-                {eco.label}
+                <EcoIcon size={16} />
+                {e.label}
               </button>
             );
           })}

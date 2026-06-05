@@ -194,7 +194,7 @@ export default function CommentSection({ post, userEmail, userName }) {
         type: 'mention',
         sender_email: userEmail,
         sender_name: userName || userEmail?.split('@')[0],
-        title: '💬 New comment on your post',
+        title: 'New comment on your post',
         message: `${userName || 'Someone'} commented: "${trimmedBody.slice(0, 80)}"`,
         post_id: post.id,
         read: false,

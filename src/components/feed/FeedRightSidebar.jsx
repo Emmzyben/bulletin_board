@@ -29,7 +29,9 @@ export default function FeedRightSidebar({ topPosts = [], allPosts = [], activeF
               color: !activeFlair ? '#fff' : (isDark ? '#7FA8D4' : '#475569'),
             }}
           >All</button>
-          {FLAIRS.map(f => (
+          {FLAIRS.map(f => {
+            const IconComponent = f.icon;
+            return (
             <button
               key={f.id}
               onClick={() => setActiveFlair(f.id)}
@@ -40,9 +42,10 @@ export default function FeedRightSidebar({ topPosts = [], allPosts = [], activeF
                 color: activeFlair === f.id ? '#fff' : (isDark ? '#7FA8D4' : '#475569'),
               }}
             >
-              {f.icon} {f.label}
+              <IconComponent size={14} style={{ display: 'inline', marginRight: 4 }} /> {f.label}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 

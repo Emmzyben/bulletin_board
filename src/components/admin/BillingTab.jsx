@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, Download, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { CreditCard, Download, ChevronRight, CheckCircle2, FileText, LifeBuoy, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 const S = {
@@ -115,24 +115,27 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
 
           <div style={S.card}>
             {[
-              { icon: '⚡', label: 'Upgrade to Pro', sub: 'Unlock workspace, unlimited posts & more', action: () => setSubTab('Plans') },
-              { icon: '📄', label: 'View Invoices', sub: 'Download past receipts and billing history', action: () => setSubTab('Invoices') },
-              { icon: '💳', label: 'Payment Methods', sub: 'Add or update your payment card', action: () => setSubTab('Payment Methods') },
-              { icon: '🛟', label: 'Billing Support', sub: 'Have a billing question? Contact us', action: () => window.location.href = '/support' },
-            ].map((item, i) => (
+              { icon: Zap, label: 'Upgrade to Pro', sub: 'Unlock workspace, unlimited posts & more', action: () => setSubTab('Plans') },
+              { icon: FileText, label: 'View Invoices', sub: 'Download past receipts and billing history', action: () => setSubTab('Invoices') },
+              { icon: CreditCard, label: 'Payment Methods', sub: 'Add or update your payment card', action: () => setSubTab('Payment Methods') },
+              { icon: LifeBuoy, label: 'Billing Support', sub: 'Have a billing question? Contact us', action: () => window.location.href = '/support' },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
               <button key={i} onClick={item.action}
                 style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: i < 3 ? '1px solid rgba(255,255,255,.05)' : 'none', textAlign: 'left' }}
                 onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.03)'}
                 onMouseOut={e => e.currentTarget.style.background = 'none'}
               >
-                <span style={{ fontSize: 22 }}>{item.icon}</span>
+                <Icon size={20} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: '#EEF4FF' }}>{item.label}</div>
                   <div style={{ fontSize: 12, color: '#6B93C4', marginTop: 2 }}>{item.sub}</div>
                 </div>
                 <ChevronRight style={{ width: 16, height: 16, color: '#3D5578' }} />
               </button>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}
@@ -145,7 +148,7 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
             <div key={plan.id} style={{ ...S.card, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, border: plan.current ? `1px solid ${plan.color}55` : '1px solid rgba(255,255,255,.07)', background: plan.current ? 'rgba(79,138,244,.06)' : 'rgba(255,255,255,.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: `${plan.color}22`, border: `1px solid ${plan.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                  {plan.id === 'free' ? '🆓' : plan.id === 'pro' ? '⭐' : plan.id === 'annual' ? '💚' : '🏢'}
+                  {plan.id === 'free' ? 'Free' : plan.id === 'pro' ? '★' : plan.id === 'annual' ? '❤' : '🏢'}
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

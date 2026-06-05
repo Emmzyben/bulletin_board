@@ -180,9 +180,17 @@ export default function Workspace() {
             <Select value={newWsEco} onValueChange={setNewWsEco}>
               <SelectTrigger><SelectValue placeholder="Choose ecosystem" /></SelectTrigger>
               <SelectContent>
-                {ECOSYSTEMS.map(e => (
-                  <SelectItem key={e.id} value={e.id}>{e.icon} {e.label}</SelectItem>
-                ))}
+                {ECOSYSTEMS.map(e => {
+                  const EcoIcon = e.icon;
+                  return (
+                  <SelectItem key={e.id} value={e.id}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <EcoIcon size={14} />
+                      {e.label}
+                    </span>
+                  </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             <Button

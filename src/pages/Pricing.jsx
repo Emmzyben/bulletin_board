@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { Loader2, Check, X, ChevronDown } from 'lucide-react';
+import { Loader2, Check, X, ChevronDown, Star, Heart, Building2, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const C = { bg: '#07090F', surface: '#0E1420', card: '#131B2A', lift: '#192236', blue: '#4F8AF4', teal: '#22D4EE', green: '#2DD4A0', ink: '#F0F6FF', ink2: '#8BADD4', ink3: '#3D5578', b1: 'rgba(255,255,255,.055)', b2: 'rgba(255,255,255,.10)' };
@@ -25,7 +25,7 @@ const plans = [
     ],
   },
   {
-    id: 'pro', icon: '⭐', badge: 'Most popular',
+    id: 'pro', icon: Star, badge: 'Most popular',
     name: 'Pro', tagline: 'Your own private workspace with channels, DMs, and file sharing.',
     price: '$7.99', period: '/ user / month', sub: 'Billed monthly · 14-day free trial',
     cta: 'Start free trial', ctaStyle: 'primary',
@@ -41,7 +41,7 @@ const plans = [
     ],
   },
   {
-    id: 'annual', icon: '💚', badge: 'Best value',
+    id: 'annual', icon: Heart, badge: 'Best value',
     name: 'Pro Annual', tagline: 'Everything in Pro, billed annually. Two months free compared to monthly.',
     price: '$10', period: '/ user / month', sub: '$120 per user / year',
     cta: 'Get annual plan', ctaStyle: 'teal',
@@ -57,7 +57,7 @@ const plans = [
     ],
   },
   {
-    id: 'enterprise', icon: '🏢', badge: null,
+    id: 'enterprise', icon: Building2, badge: null,
     name: 'Enterprise', tagline: 'Multiple workspaces, SSO, and advanced controls for large organisations.',
     price: '$14', period: '/ user / month', sub: 'Multiple workspaces · custom contracts',
     cta: 'Contact sales', ctaStyle: 'outline', ctaLink: '/support',
@@ -157,7 +157,7 @@ export default function Pricing() {
 
         {trialActive && (
           <div style={{ background: 'linear-gradient(135deg,rgba(0,200,83,.1),rgba(0,180,216,.1))', border: '1px solid rgba(0,200,83,.3)', borderRadius: 14, padding: '16px 20px', marginBottom: 32 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#00C853', marginBottom: 4 }}>🎉 Free Trial Active</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#00C853', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Sparkles size={16} /> Free Trial Active</div>
             <div style={{ fontSize: 12, color: '#6B93C4' }}>{daysLeft} days remaining · You'll be upgraded to Pro automatically on day 15</div>
           </div>
         )}
@@ -170,8 +170,11 @@ export default function Pricing() {
               position: 'relative', boxShadow: planGlow[planItem.id] || 'none',
             }}>
               {planItem.badge && (
-                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: planItem.id === 'annual' ? C.teal : C.blue, color: planItem.id === 'annual' ? '#07090F' : '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap' }}>
-                  {planItem.icon} {planItem.badge}
+                <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: planItem.id === 'annual' ? C.teal : C.blue, color: planItem.id === 'annual' ? '#07090F' : '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {(() => {
+                    const BadgeIcon = planItem.icon;
+                    return <><BadgeIcon size={14} /> {planItem.badge}</>;
+                  })()}
                 </div>
               )}
 
@@ -189,8 +192,8 @@ export default function Pricing() {
                 {planItem.features.map((f, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13 }}>
                     {f.yes
-                      ? <span style={{ color: C.green, flexShrink: 0, marginTop: 1 }}>✅</span>
-                      : <span style={{ color: C.ink3, flexShrink: 0, marginTop: 1 }}>✗</span>}
+                      ? <Check size={18} style={{ color: C.green, flexShrink: 0 }} />
+                      : <X size={18} style={{ color: C.ink3, flexShrink: 0 }} />}
                     <span style={{ color: f.yes ? C.ink : C.ink3, fontWeight: f.bold ? 600 : 400 }}>{f.label}</span>
                   </div>
                 ))}

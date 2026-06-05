@@ -5,6 +5,7 @@ import { supabase } from '@/api/supabaseClient';
 import { getEcosystem, getKarmaLevel } from '@/lib/ecosystems';
 import PostCard from '../components/feed/PostCard';
 import { toast } from 'sonner';
+import { FileText, BarChart3, MessageSquare, Bookmark } from 'lucide-react';
 
 const S = {
   page: { background: 'linear-gradient(160deg,#071020 0%,#0B1628 35%,#0A1F1A 70%,#0D1408 100%)', minHeight: '100%', height: '100%', overflowY: 'auto', color: '#EEF4FF', fontFamily: 'Inter, sans-serif' },
@@ -13,10 +14,10 @@ const S = {
 };
 
 const tabs = [
-  { id: 'posts', icon: '📝', label: 'Posts' },
-  { id: 'polls', icon: '📊', label: 'Polls' },
-  { id: 'comments', icon: '💬', label: 'Comments' },
-  { id: 'saved', icon: '🔖', label: 'Saved' },
+  { id: 'posts', icon: FileText, label: 'Posts' },
+  { id: 'polls', icon: BarChart3, label: 'Polls' },
+  { id: 'comments', icon: MessageSquare, label: 'Comments' },
+  { id: 'saved', icon: Bookmark, label: 'Saved' },
 ];
 
 const quickLinks = [
@@ -284,11 +285,11 @@ export default function Profile() {
 
             {/* Tags */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-              {eco && (
-                <span style={{ background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#6AADFF' }}>
-                  {eco.icon} {eco.label}
+              {eco && (() => { const EcoIcon = eco.icon; return (
+                <span style={{ background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#6AADFF', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <EcoIcon size={12} /> {eco.label}
                 </span>
-              )}
+              ); })()}
               {user?.company && (
                 <span style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#7FA8D4' }}>
                   🏢 {user.company}
@@ -299,8 +300,8 @@ export default function Profile() {
                   📍 {user.location}
                 </span>
               )}
-              <span style={{ background: `${karma.color || 'rgba(124,77,255,.1)'}`, border: '1px solid rgba(124,77,255,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#B39DDB' }}>
-                {karma.badge} {karma.level}
+              <span style={{ background: `${karma.color || 'rgba(124,77,255,.1)'}`, border: '1px solid rgba(124,77,255,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#B39DDB', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <karma.icon size={14} /> {karma.level}
               </span>
             </div>
 
@@ -337,21 +338,24 @@ export default function Profile() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid rgba(255,255,255,.07)', paddingBottom: 0 }}>
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              style={{
-                padding: '10px 16px', border: 'none', background: 'transparent', cursor: 'pointer',
-                fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500,
-                color: activeTab === t.id ? '#EEF4FF' : '#7FA8D4',
-                borderBottom: activeTab === t.id ? '2px solid #1B6EF3' : '2px solid transparent',
-                transition: '.15s',
-              }}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
+          {tabs.map(t => {
+            const TabIcon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                style={{
+                  padding: '10px 16px', border: 'none', background: 'transparent', cursor: 'pointer',
+                  fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500,
+                  color: activeTab === t.id ? '#EEF4FF' : '#7FA8D4',
+                  borderBottom: activeTab === t.id ? '2px solid #1B6EF3' : '2px solid transparent',
+                  transition: '.15s', display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <TabIcon size={16} /> {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab content */}

@@ -35,19 +35,24 @@ export function usePresence({ user, workspaceId, channelId }) {
     if (!user?.email || !workspaceId || !cid) return;
     const now = new Date().toISOString();
     
-    // Fetch current last_read map
-    const { data: recs } = await supabase
-      .from('presence')
-      .select('last_read')
-      .eq('user_email', user.email)
-      .eq('workspace_id', workspaceId);
-    
-    const current = recs?.[0]?.last_read || {};
-    
-    await supabase.from('presence').update({
-      last_read: { ...current, [cid]: now },
-    }).eq('user_email', user.email).eq('workspace_id', workspaceId);
-    
+    try {
+      // Fetch current last_read map
+      const { data: recs } = await supabase
+        .from('presence')
+        .select('last_read')
+        .eq('user_email', user.email)
+        .eq('workspace_id', workspaceId);
+      
+      const current = recs?.[0]?.last_read || {};
+      
+      const { error } = await supabase.from('presence').update({
+        last_read: { ...current, [cid]: now },
+      }).eq('user_email', user.email).eq('workspace_id', workspaceId);
+      
+      if (error) console.error('Failed to mark channel read:', error);
+    } catch (err) {
+      console.error('Error marking channel read:', err);
+    }
   }, [user?.email, workspaceId]);
 
   useEffect(() => {
@@ -65,11 +70,14 @@ export function usePresence({ user, workspaceId, channelId }) {
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
-      // Mark offline
+      // Mark offline - fire and forget with proper error handling
       supabase.from('presence').update({ 
         status: 'offline', 
         last_seen: new Date().toISOString() 
-      }).eq('user_email', user.email).eq('workspace_id', workspaceId).catch(() => {});
+      }).eq('user_email', user.email).eq('workspace_id', workspaceId).then(
+        () => {},
+        () => {}  // Silently ignore errors in cleanup
+      );
     };
   }, [user?.email, workspaceId, upsertPresence]);
 

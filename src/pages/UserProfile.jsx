@@ -9,8 +9,8 @@ import { format } from 'date-fns';
 import { useTheme } from '@/lib/ThemeContext';
 
 const tabs = [
-  { id: 'posts', icon: '📝', label: 'Posts' },
-  { id: 'comments', icon: '💬', label: 'Comments' },
+  { id: 'posts', icon: FileText, label: 'Posts' },
+  { id: 'comments', icon: MessageSquare, label: 'Comments' },
 ];
 
 export default function UserProfile() {
@@ -151,7 +151,7 @@ export default function UserProfile() {
                     <p style={{ fontSize: 13, color: textMuted }}>@{authorEmail?.split('@')[0]}</p>
                   </div>
                   <span style={{ background: 'rgba(124,77,255,.12)', border: '1px solid rgba(124,77,255,.3)', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, color: '#B39DDB', whiteSpace: 'nowrap' }}>
-                    {karma.badge} {karma.level}
+                    {karma.icon && <karma.icon size={14} style={{ marginRight: 4 }} />} {karma.level}
                   </span>
                 </div>
 
@@ -167,11 +167,11 @@ export default function UserProfile() {
                       <Calendar size={11} /> Joined {format(new Date(profileUser.created_at), 'MMMM yyyy')}
                     </span>
                   )}
-                  {eco && (
+                  {eco && (() => { const EcoIcon = eco.icon; return (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#6AADFF' }}>
-                      {eco.icon} {eco.label}
+                      <EcoIcon size={12} /> {eco.label}
                     </span>
-                  )}
+                  ); })()}
                   {profileUser?.company && (
                     <span style={{ background: isDark ? 'rgba(255,255,255,.05)' : '#F1F5F9', border: `1px solid ${cardBorder}`, borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: textSecondary }}>
                       🏢 {profileUser.company}
@@ -202,7 +202,9 @@ export default function UserProfile() {
             </div>
 
             <div style={{ display: 'flex', gap: 4, borderBottom: `1px solid ${tabBorder}`, marginBottom: 20 }}>
-              {tabs.map(t => (
+              {tabs.map(t => {
+                const TabIcon = t.icon;
+                return (
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
@@ -211,15 +213,16 @@ export default function UserProfile() {
                     fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500,
                     color: activeTab === t.id ? textPrimary : textSecondary,
                     borderBottom: activeTab === t.id ? '2px solid #1B6EF3' : '2px solid transparent',
-                    transition: '.15s',
+                    transition: '.15s', display: 'flex', alignItems: 'center', gap: 6,
                   }}
                 >
-                  {t.icon} {t.label}
+                  <TabIcon size={14} />{t.label}
                   <span style={{ marginLeft: 6, fontSize: 11, color: textMuted, fontWeight: 600 }}>
                     ({t.id === 'posts' ? userPosts.length : userComments.length})
                   </span>
                 </button>
-              ))}
+                );
+              })}}
             </div>
 
             {activeTab === 'posts' && (

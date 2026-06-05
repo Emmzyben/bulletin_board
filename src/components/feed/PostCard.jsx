@@ -103,7 +103,7 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
           type: 'mention',
           sender_email: userEmail,
           sender_name: userName || userEmail?.split('@')[0],
-          title: '👍 Your post was upvoted',
+          title: 'Your post was upvoted',
           message: `"${post.title.slice(0, 80)}"`,
           post_id: post.id,
           read: false,
@@ -194,11 +194,11 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
           {/* Content */}
           <div className="flex-1 p-4">
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <UI.Badge variant="default" className={`${flair.color} text-white text-xs font-medium`}>
-                {flair.icon} {flair.label}
+              <UI.Badge variant="default" className={`${flair.color} text-white text-xs font-medium flex items-center gap-1`}>
+                <flair.icon size={14} /> {flair.label}
               </UI.Badge>
-              <UI.Badge variant="outline" className={`text-xs ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-300 text-slate-600'}`}>
-                {eco.icon} {eco.label}
+              <UI.Badge variant="outline" className={`text-xs ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-300 text-slate-600'} flex items-center gap-1`}>
+                <eco.icon size={14} /> {eco.label}
               </UI.Badge>
               <span className="text-xs text-muted-foreground">
                 Posted by{' '}

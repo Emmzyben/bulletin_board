@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { CreditCard, Download, ChevronRight, CheckCircle2, AlertCircle, Zap } from 'lucide-react';
+import { CreditCard, Download, ChevronRight, CheckCircle2, AlertCircle, Zap, BarChart3, FileText, Zap as ZapIcon, LifeBuoy } from 'lucide-react';
 import { toast } from 'sonner';
 
 const S = {
@@ -97,7 +97,7 @@ export default function Billing() {
             {/* Usage Stats */}
             <div style={S.card}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>📊 Usage This Month</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700 }}><BarChart3 size={18} /> Usage This Month</div>
               </div>
               <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 20 }}>
                 {[
@@ -135,19 +135,25 @@ export default function Billing() {
             {/* Quick links */}
             <div style={S.card}>
               {[
-                { icon: '⚡', label: 'Upgrade to Pro', sub: 'Unlock workspace, unlimited posts & more', action: () => setActiveTab('Plans') },
-                { icon: '📄', label: 'View Invoices', sub: 'Download past receipts and billing history', action: () => setActiveTab('Invoices') },
-                { icon: '💳', label: 'Payment Methods', sub: 'Add or update your payment card', action: () => setActiveTab('Payment Methods') },
-                { icon: '🛟', label: 'Billing Support', sub: 'Have a billing question? Contact us', action: () => window.location.href = '/support' },
-              ].map((item, i) => (
+                { icon: ZapIcon, label: 'Upgrade to Pro', sub: 'Unlock workspace, unlimited posts & more', action: () => setActiveTab('Plans') },
+                { icon: FileText, label: 'View Invoices', sub: 'Download past receipts and billing history', action: () => setActiveTab('Invoices') },
+                { icon: CreditCard, label: 'Payment Methods', sub: 'Add or update your payment card', action: () => setActiveTab('Payment Methods') },
+                { icon: LifeBuoy, label: 'Billing Support', sub: 'Have a billing question? Contact us', action: () => window.location.href = '/support' },
+              ].map((item, i) => {
+                const IconComponent = item.icon;
+                return (
                 <button key={i} onClick={item.action} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: i < 3 ? '1px solid rgba(255,255,255,.05)' : 'none', textAlign: 'left' }}
                   onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.03)'}
                   onMouseOut={e => e.currentTarget.style.background = 'none'}
                 >
-                  <span style={{ fontSize: 22 }}>{item.icon}</span>
+                  <IconComponent size={22} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#EEF4FF' }}>{item.label}</div>
                     <div style={{ fontSize: 12, color: '#6B93C4', marginTop: 2 }}>{item.sub}</div>
+                  </div>
+                </button>
+              );
+              })
                   </div>
                   <ChevronRight style={{ width: 16, height: 16, color: '#3D5578' }} />
                 </button>

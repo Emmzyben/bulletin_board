@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '@/hooks/useNotifications.js';
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck, ThumbsUp, MessageSquare, Tag, Mail, Megaphone, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function NotificationBell({ userEmail }) {
@@ -21,12 +21,12 @@ export default function NotificationBell({ userEmail }) {
   }, []);
 
   const getIcon = (n) => {
-    if (n.title?.includes('upvoted')) return '👍';
-    if (n.title?.includes('comment')) return '💬';
-    if (n.title?.includes('mentioned')) return '🏷️';
-    if (n.type === 'dm') return '✉️';
-    if (n.type === 'channel_activity') return '📢';
-    return '🔔';
+    if (n.title?.includes('upvoted')) return ThumbsUp;
+    if (n.title?.includes('comment')) return MessageSquare;
+    if (n.title?.includes('mentioned')) return Tag;
+    if (n.type === 'dm') return Mail;
+    if (n.type === 'channel_activity') return Megaphone;
+    return Bell;
   };
 
   const handleNotificationClick = (n) => {
@@ -52,10 +52,10 @@ export default function NotificationBell({ userEmail }) {
         style={{
           width: 34, height: 34, border: 'none', background: 'transparent',
           color: '#7FA8D4', borderRadius: 8, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 16, cursor: 'pointer', position: 'relative',
+          justifyContent: 'center', cursor: 'pointer', position: 'relative',
         }}
       >
-        🔔
+        <Bell size={18} />
         {unreadCount > 0 && (
           <div style={{
             position: 'absolute', top: -2, right: -2, width: 16, height: 16,
@@ -117,9 +117,7 @@ export default function NotificationBell({ userEmail }) {
                   onMouseOut={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(27,110,243,.08)'}
                 >
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>
-                      {getIcon(n)}
-                    </span>
+                    {(() => { const NotifIcon = getIcon(n); return <NotifIcon size={16} color="#6AADFF" style={{ flexShrink: 0 }} />; })()}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
                         fontSize: 12, fontWeight: 700, color: '#EEF4FF',

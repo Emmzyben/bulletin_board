@@ -2,7 +2,23 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/api/supabaseClient';
-import { Loader2 } from 'lucide-react';
+import {
+  Loader2,
+  LayoutDashboard,
+  TrendingUp,
+  Users,
+  ShieldCheck,
+  Receipt,
+  Briefcase,
+  User,
+  CreditCard,
+  LockKeyhole,
+  Ban,
+  AlertTriangle,
+  ClipboardList,
+  Lock,
+  CheckCircle2,
+} from 'lucide-react';
 import BillingTab from '../components/admin/BillingTab';
 import AdminOverviewTab from '../components/admin/AdminOverviewTab';
 import OrdersTab from '../components/admin/OrdersTab';
@@ -17,14 +33,14 @@ const S = {
 };
 
 const TABS = [
-  { id: 'overview', label: '📊 Overview' },
-  { id: 'workspace-analytics', label: '📈 Analytics' },
-  { id: 'user-management', label: '👥 User Management' },
-  { id: 'moderation', label: '🛡️ Moderation' },
-  { id: 'orders', label: '🧾 Orders' },
-  { id: 'sales', label: '💼 Sales' },
-  { id: 'users', label: '👤 Platform Users' },
-  { id: 'billing', label: '💳 Billing' },
+  { id: 'overview',            label: 'Overview',        Icon: LayoutDashboard },
+  { id: 'workspace-analytics', label: 'Analytics',       Icon: TrendingUp },
+  { id: 'user-management',     label: 'User Management', Icon: Users },
+  { id: 'moderation',          label: 'Moderation',      Icon: ShieldCheck },
+  { id: 'orders',              label: 'Orders',          Icon: Receipt },
+  { id: 'sales',               label: 'Sales',           Icon: Briefcase },
+  { id: 'users',               label: 'Platform Users',  Icon: User },
+  { id: 'billing',             label: 'Billing',         Icon: CreditCard },
 ];
 
 export default function Admin() {
@@ -64,7 +80,7 @@ export default function Admin() {
   // Auth guards
   if (!user) return (
     <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-      <div style={{ fontSize: 48 }}>🔐</div>
+      <LockKeyhole style={{ width: 48, height: 48, color: '#6B93C4' }} />
       <h2 style={{ fontSize: 20, fontWeight: 800, color: '#EEF4FF' }}>Admin Access Only</h2>
       <p style={{ fontSize: 14, color: '#6B93C4' }}>Please sign in to continue.</p>
       <button onClick={() => navigateToLogin()} style={{ padding: '10px 28px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Sign In</button>
@@ -75,7 +91,7 @@ export default function Admin() {
   const userRole = user?.user_metadata?.role || user?.role;
   if (userRole !== 'admin') return (
     <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-      <div style={{ fontSize: 48 }}>🚫</div>
+      <Ban style={{ width: 48, height: 48, color: '#EF5350' }} />
       <h2 style={{ fontSize: 20, fontWeight: 800, color: '#EEF4FF' }}>Access Denied</h2>
       <p style={{ fontSize: 14, color: '#6B93C4' }}>This area is restricted to administrators only.</p>
     </div>
@@ -108,11 +124,11 @@ export default function Admin() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,200,83,.08)', border: '1px solid rgba(0,200,83,.2)', fontSize: 12, color: '#00C853', fontWeight: 700 }}>
-              🟢 82% Self-Serve
+            <div style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,200,83,.08)', border: '1px solid rgba(0,200,83,.2)', fontSize: 12, color: '#00C853', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 style={{ width: 13, height: 13 }} /> 82% Self-Serve
             </div>
-            <div style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(239,83,80,.08)', border: '1px solid rgba(239,83,80,.2)', fontSize: 12, color: '#EF5350', fontWeight: 700 }}>
-              ⚠️ 7 Failed Payments
+            <div style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(239,83,80,.08)', border: '1px solid rgba(239,83,80,.2)', fontSize: 12, color: '#EF5350', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <AlertTriangle style={{ width: 13, height: 13 }} /> 7 Failed Payments
             </div>
           </div>
         </div>
@@ -125,7 +141,11 @@ export default function Admin() {
               color: activeTab === t.id ? '#EEF4FF' : '#7FA8D4',
               borderBottom: activeTab === t.id ? '2px solid #1B6EF3' : '2px solid transparent',
               whiteSpace: 'nowrap', transition: '.15s',
-            }}>{t.label}</button>
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <t.Icon style={{ width: 14, height: 14 }} />
+              {t.label}
+            </button>
           ))}
         </div>
 
@@ -140,14 +160,14 @@ export default function Admin() {
         {activeTab !== 'overview' && activeTab !== 'workspace-analytics' && activeTab !== 'user-management' && activeTab !== 'moderation' && activeTab !== 'orders' && activeTab !== 'sales' && activeTab !== 'users' && activeTab !== 'billing' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { icon: '🔐', title: 'Require 2FA', desc: 'Enforce two-factor authentication for all members', action: 'Enable', color: '#1B6EF3' },
-              { icon: '📋', title: 'Login History', desc: 'View recent login activity across all members', action: 'View', color: '#00B4D8' },
-              { icon: '🛡️', title: 'Security Audit', desc: 'Run a comprehensive security check on your workspace', action: 'Run Audit', color: '#7C4DFF' },
-              { icon: '🔒', title: 'SSO / SAML', desc: 'Enable single sign-on for enterprise authentication', action: 'Upgrade', color: '#FF8F00' },
+              { Icon: LockKeyhole, title: 'Require 2FA',     desc: 'Enforce two-factor authentication for all members',      action: 'Enable',    color: '#1B6EF3' },
+              { Icon: ClipboardList, title: 'Login History', desc: 'View recent login activity across all members',           action: 'View',      color: '#00B4D8' },
+              { Icon: ShieldCheck,  title: 'Security Audit', desc: 'Run a comprehensive security check on your workspace',   action: 'Run Audit', color: '#7C4DFF' },
+              { Icon: Lock,         title: 'SSO / SAML',     desc: 'Enable single sign-on for enterprise authentication',    action: 'Upgrade',   color: '#FF8F00' },
             ].map(s => (
               <div key={s.title} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <span style={{ fontSize: 24 }}>{s.icon}</span>
+                  <s.Icon style={{ width: 24, height: 24, color: s.color, flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 2 }}>{s.title}</div>
                     <div style={{ fontSize: 13, color: '#6B93C4' }}>{s.desc}</div>

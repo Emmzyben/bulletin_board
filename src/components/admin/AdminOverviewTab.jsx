@@ -1,4 +1,5 @@
 import React from 'react';
+import { DollarSign, Users, TrendingUp, Building2, CreditCard, AlertCircle, RotateCw } from 'lucide-react';
 
 const S = {
   card: { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14 },
@@ -8,12 +9,12 @@ const MRR_BARS = [42, 58, 71, 65, 88, 94, 107];
 const MRR_LABELS = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'];
 
 const STAT_CARDS = [
-  { icon: '💰', label: 'MRR', value: '$4,820', delta: '+18% vs last month', color: '#00C853' },
-  { icon: '👥', label: 'Total Users', value: '2,418', delta: '+124 this month', color: '#1B6EF3' },
-  { icon: '📈', label: 'Conversion Rate', value: '6.4%', delta: '+1.2% vs last month', color: '#7C4DFF' },
-  { icon: '🏢', label: 'Active Workspaces', value: '312', delta: '+28 this month', color: '#00B4D8' },
-  { icon: '💳', label: 'Pro Subscribers', value: '487', delta: '+41 this month', color: '#FF8F00' },
-  { icon: '⚠️', label: 'Failed Payments', value: '7', delta: 'Needs attention', color: '#EF5350' },
+  { icon: DollarSign, label: 'MRR', value: '$4,820', delta: '+18% vs last month', color: '#00C853' },
+  { icon: Users, label: 'Total Users', value: '2,418', delta: '+124 this month', color: '#1B6EF3' },
+  { icon: TrendingUp, label: 'Conversion Rate', value: '6.4%', delta: '+1.2% vs last month', color: '#7C4DFF' },
+  { icon: Building2, label: 'Active Workspaces', value: '312', delta: '+28 this month', color: '#00B4D8' },
+  { icon: CreditCard, label: 'Pro Subscribers', value: '487', delta: '+41 this month', color: '#FF8F00' },
+  { icon: AlertCircle, label: 'Failed Payments', value: '7', delta: 'Needs attention', color: '#EF5350' },
 ];
 
 const RECENT_ORDERS = [
@@ -33,14 +34,17 @@ export default function AdminOverviewTab() {
 
       {/* KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 }}>
-        {STAT_CARDS.map((s, i) => (
+        {STAT_CARDS.map((s, i) => {
+          const IconComponent = s.icon;
+          return (
           <div key={i} style={{ ...S.card, padding: '18px 20px' }}>
-            <div style={{ fontSize: 20, marginBottom: 8 }}>{s.icon}</div>
+            <IconComponent size={24} color={s.color} style={{ marginBottom: 8 }} />
             <div style={{ fontSize: 10, fontWeight: 700, color: '#6B93C4', textTransform: 'uppercase', letterSpacing: '.7px', marginBottom: 5 }}>{s.label}</div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#EEF4FF', letterSpacing: '-1px', marginBottom: 4 }}>{s.value}</div>
             <div style={{ fontSize: 11, color: s.color, fontWeight: 600 }}>{s.delta}</div>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* MRR Chart + Order pipeline */}
@@ -49,7 +53,7 @@ export default function AdminOverviewTab() {
         <div style={{ ...S.card, padding: '22px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF' }}>📈 Monthly Recurring Revenue</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#EEF4FF' }}><TrendingUp size={18} /> Monthly Recurring Revenue</div>
               <div style={{ fontSize: 12, color: '#6B93C4', marginTop: 2 }}>Last 7 months</div>
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#00C853' }}>$4,820</div>
@@ -66,7 +70,7 @@ export default function AdminOverviewTab() {
 
         {/* Order pipeline breakdown */}
         <div style={{ ...S.card, padding: '22px 24px' }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 18 }}>🔄 Order Pipeline</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 18 }}><RotateCw size={18} /> Order Pipeline</div>
           {[
             { label: 'Self-Serve (auto)', count: 41, pct: 82, color: '#00C853', desc: 'No action needed' },
             { label: 'Assisted Sales', count: 6, pct: 12, color: '#1B6EF3', desc: 'Admin follow-up' },
@@ -94,7 +98,7 @@ export default function AdminOverviewTab() {
       {/* Recent orders */}
       <div style={{ ...S.card, overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF' }}>🧾 Recent Orders</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF' }}>📦 Recent Orders</span>
           <span style={{ fontSize: 11, color: '#6B93C4' }}>Last 24 hours</span>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

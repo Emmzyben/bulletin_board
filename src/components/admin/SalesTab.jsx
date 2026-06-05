@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { RotateCw, CheckCircle, Circle, Briefcase } from 'lucide-react';
 
 const S = {
   card: { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14 },
@@ -35,7 +36,7 @@ export default function SalesTab() {
 
       {/* Pipeline funnel */}
       <div style={{ ...S.card, padding: '22px 24px' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 18 }}>🔄 Sales Pipeline</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 18 }}><RotateCw size={18} /> Sales Pipeline</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           {PIPELINE.map((p, i) => (
             <div key={p.stage} onClick={() => setActiveStage(activeStage === p.stage ? 'all' : p.stage)} style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}>
@@ -50,23 +51,26 @@ export default function SalesTab() {
       {/* Admin action guide */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
         {[
-          { icon: '🟢', title: 'Self-Serve (Auto)', desc: 'User upgrades themselves. Payment processed instantly. No admin action needed.', action: null },
-          { icon: '🔵', title: 'Assisted Sales', desc: 'User needs help. Explain plans, recommend option, and close deal with support.', action: 'View Leads' },
-          { icon: '🟣', title: 'Enterprise Deals', desc: 'Large company needs custom pricing, onboarding, and contract. You negotiate directly.', action: 'Open Deals' },
-        ].map(c => (
+          { icon: CheckCircle, title: 'Self-Serve (Auto)', desc: 'User upgrades themselves. Payment processed instantly. No admin action needed.', action: null },
+          { icon: Circle, title: 'Assisted Sales', desc: 'User needs help. Explain plans, recommend option, and close deal with support.', action: 'View Leads' },
+          { icon: Circle, title: 'Enterprise Deals', desc: 'Large company needs custom pricing, onboarding, and contract. You negotiate directly.', action: 'Open Deals' },
+        ].map(c => {
+          const IconComponent = c.icon;
+          return (
           <div key={c.title} style={{ ...S.card, padding: '18px 20px' }}>
-            <div style={{ fontSize: 20, marginBottom: 8 }}>{c.icon}</div>
+            <IconComponent size={24} style={{ marginBottom: 8, color: c.title === 'Self-Serve (Auto)' ? '#00C853' : c.title === 'Assisted Sales' ? '#1B6EF3' : '#7C4DFF' }} />
             <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 8 }}>{c.title}</div>
             <div style={{ fontSize: 12, color: '#6B93C4', lineHeight: 1.6, marginBottom: 12 }}>{c.desc}</div>
             {c.action && <button onClick={() => toast.info(c.action)} style={{ fontSize: 12, color: '#6AADFF', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>{c.action} →</button>}
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {/* Leads table */}
       <div style={{ ...S.card, overflow: 'hidden' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF' }}>💼 Active Deals & Leads</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', display: 'flex', alignItems: 'center', gap: 8 }}><Briefcase size={16} /> Active Deals & Leads</span>
           <button onClick={() => toast.success('New lead added')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#1B6EF3', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>+ Add Lead</button>
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

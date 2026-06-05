@@ -83,8 +83,9 @@ export default function WorkspaceSidebar({
           </span>
         </div>
         {eco && (
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6AADFF', marginBottom: 4 }}>
-            {eco.icon} {eco.label}
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#6AADFF', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {(() => { const Icon = eco.icon; return <Icon size={14} />; })()}
+            {eco.label}
           </div>
         )}
         <div style={{ fontSize: 12, color: '#6B93C4', display: 'flex', alignItems: 'center', gap: 5 }}>

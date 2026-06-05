@@ -275,8 +275,8 @@ export default function Analytics() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 14, fontWeight: 600, color: '#EEF4FF', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{post.title}</p>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          {flair && <span style={{ fontSize: 11, color: '#7FA8D4' }}>{flair.icon} {flair.label}</span>}
-                          {eco && <span style={{ fontSize: 11, color: '#6B93C4' }}>{eco.icon} {eco.label}</span>}
+                          {flair && (() => { const FlairIcon = flair.icon; return <span style={{ fontSize: 11, color: '#7FA8D4', display: 'flex', alignItems: 'center', gap: 4 }}><FlairIcon size={12} /> {flair.label}</span>; })()}
+                          {eco && (() => { const EcoIcon = eco.icon; return <span style={{ fontSize: 11, color: '#6B93C4', display: 'flex', alignItems: 'center', gap: 4 }}><EcoIcon size={12} /> {eco.label}</span>; })()}
                           {post.created_at && <span style={{ fontSize: 11, color: '#4A6D8C' }}>{format(parseISO(post.created_at), 'MMM d, yyyy')}</span>}
                         </div>
                       </div>

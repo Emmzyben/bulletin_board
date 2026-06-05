@@ -132,7 +132,7 @@ export default function Onboarding() {
                           : 'hover:bg-secondary'
                       }`}
                     >
-                      <span className="text-2xl block mb-1">{eco.icon}</span>
+                      <span className="text-xl block mb-1">{(() => { const Icon = eco.icon; return <Icon size={28} />; })()}</span>
                       <span className="text-xs font-medium">{eco.label}</span>
                     </button>
                   ))}

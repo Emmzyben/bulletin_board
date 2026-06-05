@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Cpu, Stethoscope, Building2, BookOpen, Building, Home, Hotel, Briefcase, Music, Search } from 'lucide-react';
 import { getEcosystem, getFlair } from '@/lib/ecosystems';
 import { useQuery } from '@tanstack/react-query';
 
@@ -75,15 +75,15 @@ export default function GlobalSearch() {
 
   // Ecosystem / community search
   const ECOSYSTEMS = [
-    { id: 'technology', label: 'Technology', icon: '💻' },
-    { id: 'healthcare', label: 'Healthcare', icon: '🏥' },
-    { id: 'corporate', label: 'Corporate', icon: '🏢' },
-    { id: 'education', label: 'Education', icon: '📚' },
-    { id: 'government', label: 'Government', icon: '🏛️' },
-    { id: 'real_estate', label: 'Real Estate', icon: '🏠' },
-    { id: 'hospitality', label: 'Hospitality', icon: '🏨' },
-    { id: 'careers', label: 'Careers', icon: '💼' },
-    { id: 'entertainment', label: 'Entertainment', icon: '🎭' },
+    { id: 'technology', label: 'Technology', icon: Cpu },
+    { id: 'healthcare', label: 'Healthcare', icon: Stethoscope },
+    { id: 'corporate', label: 'Corporate', icon: Building2 },
+    { id: 'education', label: 'Education', icon: BookOpen },
+    { id: 'government', label: 'Government', icon: Building },
+    { id: 'real_estate', label: 'Real Estate', icon: Home },
+    { id: 'hospitality', label: 'Hospitality', icon: Hotel },
+    { id: 'careers', label: 'Careers', icon: Briefcase },
+    { id: 'entertainment', label: 'Entertainment', icon: Music },
   ];
   const matchedEcosystems = trimmed.length >= 2
     ? ECOSYSTEMS.filter(e => e.label.toLowerCase().includes(trimmed)).slice(0, 3)
@@ -120,7 +120,7 @@ export default function GlobalSearch() {
         color: '#64748B', fontSize: 13, transition: '.2s',
         boxShadow: focused ? '0 0 0 3px rgba(61,90,128,.08)' : 'none',
       }}>
-        <span>🔍</span>
+        <Search size={16} color="#64748B" />
         <input
           ref={inputRef}
           value={query}
@@ -156,9 +156,10 @@ export default function GlobalSearch() {
             <Section label="Posts">
               {matchedPosts.map(p => {
                 const flair = getFlair(p.flair);
+                const FlairIcon = flair?.icon;
                 return (
                   <ResultRow key={p.id} onClick={() => handlePostClick(p)}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>{flair?.icon || '📝'}</span>
+                    {FlairIcon ? <FlairIcon size={14} /> : <BookOpen size={14} />}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#1F3A5F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.title}
@@ -196,16 +197,19 @@ export default function GlobalSearch() {
           {/* Communities */}
           {matchedEcosystems.length > 0 && (
             <Section label="Communities">
-              {matchedEcosystems.map(eco => (
+              {matchedEcosystems.map(eco => {
+                const EcoIcon = eco.icon;
+                return (
                 <ResultRow key={eco.id} onClick={() => handleEcoClick(eco)}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{eco.icon}</span>
+                  <EcoIcon size={18} style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#1F3A5F' }}>{eco.label}</div>
                     <div style={{ fontSize: 11, color: '#94A3B8' }}>Browse {eco.label} community</div>
                   </div>
                   <span style={{ fontSize: 11, color: '#CBD5E1', flexShrink: 0 }}>↗</span>
                 </ResultRow>
-              ))}
+                );
+              })}
             </Section>
           )}
         </div>

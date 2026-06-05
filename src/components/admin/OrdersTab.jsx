@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { CheckCircle, Circle } from 'lucide-react';
 
 const S = {
   card: { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14 },
@@ -30,16 +31,20 @@ export default function OrdersTab() {
       {/* Summary cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
         {[
-          { label: '🟢 Self-Serve (Auto)', count: ORDERS.filter(o => o.type === 'self-serve').length, sub: 'No admin action needed', color: '#00C853' },
-          { label: '🔵 Assisted Sales', count: ORDERS.filter(o => o.type === 'assisted').length, sub: 'Admin follow-up required', color: '#1B6EF3' },
-          { label: '🟣 Enterprise Deals', count: ORDERS.filter(o => o.type === 'enterprise').length, sub: 'Custom negotiation', color: '#7C4DFF' },
-        ].map(c => (
+          { icon: CheckCircle, label: 'Self-Serve (Auto)', count: ORDERS.filter(o => o.type === 'self-serve').length, sub: 'No admin action needed', color: '#00C853' },
+          { icon: Circle, label: 'Assisted Sales', count: ORDERS.filter(o => o.type === 'assisted').length, sub: 'Admin follow-up required', color: '#1B6EF3' },
+          { icon: Circle, label: 'Enterprise Deals', count: ORDERS.filter(o => o.type === 'enterprise').length, sub: 'Custom negotiation', color: '#7C4DFF' },
+        ].map(c => {
+          const IconComponent = c.icon;
+          return (
           <div key={c.label} style={{ ...S.card, padding: '16px 18px' }}>
+            <IconComponent size={24} color={c.color} style={{ marginBottom: 6 }} />
             <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 4 }}>{c.label}</div>
             <div style={{ fontSize: 32, fontWeight: 800, color: c.color, letterSpacing: '-1px', marginBottom: 4 }}>{c.count}</div>
             <div style={{ fontSize: 11, color: '#6B93C4' }}>{c.sub}</div>
           </div>
-        ))}
+        );
+        })}}
       </div>
 
       {/* Filter bar */}

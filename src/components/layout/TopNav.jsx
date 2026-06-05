@@ -4,7 +4,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, Menu, X, Sun, Moon } from 'lucide-react';
+import { User, LogOut, Settings, Menu, X, Sun, Moon, Edit } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import NotificationBell from './NotificationBell';
 import GlobalSearch from './GlobalSearch';
@@ -83,7 +83,7 @@ export default function TopNav({ user, onCreatePost, onMobileMenuToggle, mobileM
           onMouseOver={e => { e.currentTarget.style.background = '#0D5FDB'; }}
           onMouseOut={e => { e.currentTarget.style.background = '#1B6EF3'; }}
         >
-          ✏️ Post
+          <Edit size={16} /> Post
         </button>
       </nav>
 
