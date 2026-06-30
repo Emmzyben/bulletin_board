@@ -97,7 +97,7 @@ function formatMsgTime(dateStr) {
   return format(d, 'MMM d') + ' ' + timeStr;
 }
 
-export default function MessageArea({ channelId, channelName, workspaceId }) {
+export default function MessageArea({ channelId, channelName, activeDm, workspaceId }) {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -123,39 +123,60 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
   const { typingUsers, onTyping, onStopTyping } = useTyping({ channelId, userEmail: user?.email, userName: user?.full_name });
 
   const { data: messages = [] } = useQuery({
-    queryKey: ['messages', channelId],
+    queryKey: ['messages', channelId || activeDm],
     queryFn: async () => {
-      if (!channelId) return [];
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('channel_id', channelId)
-        .order('created_at', { ascending: true })
-        .limit(100);
+      if (!channelId && !activeDm) return [];
+      let query = supabase.from('messages').select('*').eq('workspace_id', workspaceId);
+      
+      if (channelId) {
+        query = query.eq('channel_id', channelId);
+      } else if (activeDm) {
+        query = query.eq('is_dm', true)
+          .or(`and(sender_email.eq.${user?.email},dm_recipient.eq.${activeDm}),and(sender_email.eq.${activeDm},dm_recipient.eq.${user?.email})`);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true }).limit(100);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!channelId,
+    enabled: !!(channelId || activeDm),
   });
 
   // Real-time subscription for new messages
   useEffect(() => {
-    if (!channelId) return;
+    const roomId = channelId ? `room_${channelId}` : activeDm ? `dm_${user?.email}_${activeDm}` : null;
+    if (!roomId) return;
     
+    const filterStr = channelId ? `channel_id=eq.${channelId}` : `workspace_id=eq.${workspaceId}`; 
+
     const messageSub = supabase
-      .channel(`room_${channelId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+      .channel(roomId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: filterStr }, (payload) => {
+        if (activeDm) {
+          const msg = payload.new;
+          if (msg.is_dm && ((msg.sender_email === user?.email && msg.dm_recipient === activeDm) || (msg.sender_email === activeDm && msg.dm_recipient === user?.email))) {
+            queryClient.invalidateQueries({ queryKey: ['messages', activeDm] });
+          }
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+        }
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: filterStr }, (payload) => {
+        if (activeDm) {
+          const msg = payload.new;
+          if (msg.is_dm && ((msg.sender_email === user?.email && msg.dm_recipient === activeDm) || (msg.sender_email === activeDm && msg.dm_recipient === user?.email))) {
+            queryClient.invalidateQueries({ queryKey: ['messages', activeDm] });
+          }
+        } else {
+          queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(messageSub);
     };
-  }, [channelId, queryClient]);
+  }, [channelId, activeDm, workspaceId, user?.email, queryClient]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -163,7 +184,7 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
     }
     // Mark channel as read when messages change
     if (channelId) markChannelRead(channelId);
-  }, [messages, channelId]);
+  }, [messages, channelId, activeDm]);
 
   useEffect(() => {
     if (huddleActive) {
@@ -212,7 +233,7 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
   };
 
   const handleSend = async () => {
-    if (!newMessage.trim() && !attachedFile || !channelId) return;
+    if ((!newMessage.trim() && !attachedFile) || (!channelId && !activeDm)) return;
     setSending(true);
     const messageText = newMessage;
     setNewMessage('');
@@ -220,19 +241,27 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
     setAttachedFile(null);
     
     try {
-      const { error } = await supabase
-        .from('messages')
-        .insert({
+      const payload = {
           content: messageText || (file ? `📎 ${file.name}` : ''),
-          channel_id: channelId,
           workspace_id: workspaceId,
           sender_email: user?.email,
-          sender_name: user?.full_name || 'Anonymous',
+          sender_name: user?.full_name || user?.email?.split('@')[0] || 'User',
           file_url: file?.url,
-        });
+      };
+
+      if (channelId) {
+          payload.channel_id = channelId;
+      } else if (activeDm) {
+          payload.is_dm = true;
+          payload.dm_recipient = activeDm;
+      }
+
+      const { error } = await supabase
+        .from('messages')
+        .insert(payload);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+      queryClient.invalidateQueries({ queryKey: ['messages', channelId || activeDm] });
     } catch (error) {
       setNewMessage(messageText);
       setAttachedFile(file);
@@ -331,6 +360,14 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
     return true;
   });
 
+  if (!channelId && !activeDm) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: '#0F1E35', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#7FA8D4', fontSize: 15, fontWeight: 600 }}>Select a channel or direct message</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', background: '#0F1E35', position: 'relative', overflow: 'hidden' }}>
       {/* Subtle grid background */}
@@ -406,8 +443,17 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
       <div style={{ height: 50, background: 'rgba(11,22,40,.7)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', padding: '0 18px', gap: 12, flexShrink: 0, position: 'relative', zIndex: 2 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#EEF4FF', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '-0.2px' }}>
-            <span style={{ color: '#6B93C4', fontSize: 18 }}>#</span>
-            <span>{channelName}</span>
+            {activeDm ? (
+              <>
+                <span style={{ color: '#6B93C4', fontSize: 18 }}>@</span>
+                <span>{activeDm.split('@')[0]}</span>
+              </>
+            ) : (
+              <>
+                <span style={{ color: '#6B93C4', fontSize: 18 }}>#</span>
+                <span>{channelName}</span>
+              </>
+            )}
           </div>
           {/* Online members in this channel */}
           {onlineMembers.length > 0 && (
@@ -549,7 +595,8 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
           </div>
         ) : (
           displayedMessages.map(msg => {
-            const senderInitials = msg.sender_name ? msg.sender_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
+            const displayName = msg.sender_name && msg.sender_name !== 'Anonymous' ? msg.sender_name : (msg.sender_email?.split('@')[0] || 'User');
+            const senderInitials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
             const isOwn = msg.sender_email === user?.email;
             return (
               <div
@@ -568,7 +615,7 @@ export default function MessageArea({ channelId, channelName, workspaceId }) {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: '#EEF4FF', letterSpacing: '-0.2px' }}>{msg.sender_name}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#EEF4FF', letterSpacing: '-0.2px' }}>{displayName}</span>
                   {isOwn && (
                     <span style={{ fontSize: 10, fontWeight: 700, color: '#7FA8D4', background: 'rgba(124,77,255,.12)', padding: '1px 7px', borderRadius: 4 }}>Owner</span>
                   )}

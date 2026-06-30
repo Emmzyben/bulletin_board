@@ -1,23 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Hash, Lock, Plus, Globe, ChevronDown, Settings, ChevronRight } from 'lucide-react';
+import { Hash, Lock, ChevronRight, Settings, Clock, MoreHorizontal } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getEcosystem } from '@/lib/ecosystems';
 import { usePresence } from '@/hooks/usePresence';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
+import { toast } from 'sonner';
 
 export default function WorkspaceSidebar({
   workspace, channels = [], activeChannelId, setActiveChannelId,
-  activeDm, setActiveDm, b2bSpaces = [], onB2BClick
+  activeDm, setActiveDm, b2bSpaces = [], onB2BClick, onResendB2BInvite
 }) {
   const { user } = useAuth();
   const [showNewChannel, setShowNewChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState('public');
   const [openB2B, setOpenB2B] = useState(null);
+  const [showDmPicker, setShowDmPicker] = useState(false);
+  const [hoveredChannel, setHoveredChannel] = useState(null);
+  const [editingChannel, setEditingChannel] = useState(null);
+  const [editChannelName, setEditChannelName] = useState('');
+  const [channelMenuOpen, setChannelMenuOpen] = useState(null);
   const queryClient = useQueryClient();
   const eco = workspace ? getEcosystem(workspace.ecosystem) : null;
+  const isOwner = user?.email === workspace?.owner_email;
+
+  // Active vs pending B2B spaces
+  const activeB2BSpaces = b2bSpaces.filter(s => s.status === 'active');
+  const pendingB2BSpaces = b2bSpaces.filter(s => s.status === 'pending');
 
   const handleCreateChannel = async () => {
     if (!newChannelName || !workspace) return;
@@ -31,11 +42,41 @@ export default function WorkspaceSidebar({
     
     if (error) {
       console.error('Error creating channel:', error);
+      toast.error('Failed to create channel');
       return;
     }
     queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
     setShowNewChannel(false);
     setNewChannelName('');
+  };
+
+  const handleRenameChannel = async (ch) => {
+    if (!editChannelName.trim() || editChannelName === ch.name) {
+      setEditingChannel(null);
+      return;
+    }
+    const { error } = await supabase
+      .from('channels')
+      .update({ name: editChannelName.trim().toLowerCase().replace(/\s+/g, '-') })
+      .eq('id', ch.id);
+    if (error) {
+      toast.error('Failed to rename channel');
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
+    }
+    setEditingChannel(null);
+  };
+
+  const handleDeleteChannel = async (ch) => {
+    if (!window.confirm(`Delete #${ch.name}? This cannot be undone.`)) return;
+    const { error } = await supabase.from('channels').delete().eq('id', ch.id);
+    if (error) {
+      toast.error('Failed to delete channel');
+    } else {
+      if (activeChannelId === ch.id) setActiveChannelId(null);
+      queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
+      toast.success(`#${ch.name} deleted`);
+    }
   };
 
   // Real-time subscription for channel updates
@@ -53,6 +94,14 @@ export default function WorkspaceSidebar({
     };
   }, [workspace?.id, queryClient]);
 
+  // Close channel menu on outside click
+  useEffect(() => {
+    if (!channelMenuOpen) return;
+    const close = () => setChannelMenuOpen(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [channelMenuOpen]);
+
   const initials = user?.full_name
     ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : 'U';
@@ -61,16 +110,9 @@ export default function WorkspaceSidebar({
   const onlineEmails = new Set(onlineMembers.map(m => m.user_email));
   const onlineCount = onlineMembers.length;
 
-  const groupedChannels = {
-    announcements: channels.filter(c => c.name?.includes('announcement')),
-    general: channels.filter(c => ['general', 'random', 'hiring'].includes(c.name)),
-    other: channels.filter(c =>
-      !c.name?.includes('announcement') &&
-      !['general', 'random', 'hiring'].includes(c.name)
-    ),
-  };
+  const allRegularChannels = channels.filter(c => c.type !== 'b2b');
 
-  const allRegularChannels = channels;
+  const members = workspace?.members || [];
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0B1628' }}>
@@ -94,8 +136,9 @@ export default function WorkspaceSidebar({
         </div>
       </div>
 
-      {/* New Post button */}
+      {/* New Message button */}
       <button
+        onClick={() => setShowDmPicker(true)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           margin: '10px 12px 4px', padding: '9px 14px',
@@ -110,57 +153,113 @@ export default function WorkspaceSidebar({
         ✏️ New Message
       </button>
 
-
-
       {/* Scrollable nav */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0 20px' }}>
 
         {/* Channels section */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 5px', fontSize: 11, fontWeight: 800, color: 'rgba(150,190,240,.65)', textTransform: 'uppercase', letterSpacing: '.8px' }}>
           <span>Channels</span>
-          <button
-            onClick={() => setShowNewChannel(true)}
-            style={{ fontSize: 17, color: '#6B93C4', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer' }}
-          >+</button>
+          {isOwner && (
+            <button
+              onClick={() => setShowNewChannel(true)}
+              style={{ fontSize: 17, color: '#6B93C4', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, border: 'none', background: 'none', cursor: 'pointer' }}
+            >+</button>
+          )}
         </div>
 
         {allRegularChannels.map(ch => (
-          <button
+          <div
             key={ch.id}
-            onClick={() => { setActiveChannelId(ch.id); setActiveDm(null); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 9,
-              padding: '7px 16px', cursor: 'pointer',
-              fontSize: 14, fontWeight: activeChannelId === ch.id && !activeDm ? 600 : 500,
-              color: activeChannelId === ch.id && !activeDm ? '#EEF4FF' : '#7FA8D4',
-              background: activeChannelId === ch.id && !activeDm ? 'rgba(27,110,243,.14)' : 'transparent',
-              border: 'none', width: '100%', textAlign: 'left',
-              position: 'relative', transition: '.15s',
-            }}
+            style={{ position: 'relative' }}
+            onMouseEnter={() => setHoveredChannel(ch.id)}
+            onMouseLeave={() => setHoveredChannel(null)}
           >
-            {activeChannelId === ch.id && !activeDm && (
-              <div style={{ position: 'absolute', left: 0, top: 4, bottom: 4, width: 3, background: '#1B6EF3', borderRadius: '0 3px 3px 0' }} />
+            {editingChannel === ch.id ? (
+              <div style={{ padding: '4px 12px' }}>
+                <input
+                  autoFocus
+                  value={editChannelName}
+                  onChange={e => setEditChannelName(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleRenameChannel(ch);
+                    if (e.key === 'Escape') setEditingChannel(null);
+                  }}
+                  onBlur={() => handleRenameChannel(ch)}
+                  style={{ width: '100%', background: 'rgba(255,255,255,.08)', border: '1px solid rgba(27,110,243,.5)', borderRadius: 6, padding: '5px 8px', color: '#EEF4FF', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}
+                />
+              </div>
+            ) : (
+              <button
+                onClick={() => { setActiveChannelId(ch.id); setActiveDm(null); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 9,
+                  padding: '7px 16px', cursor: 'pointer',
+                  fontSize: 14, fontWeight: activeChannelId === ch.id && !activeDm ? 600 : 500,
+                  color: activeChannelId === ch.id && !activeDm ? '#EEF4FF' : '#7FA8D4',
+                  background: activeChannelId === ch.id && !activeDm ? 'rgba(27,110,243,.14)' : 'transparent',
+                  border: 'none', width: '100%', textAlign: 'left',
+                  position: 'relative', transition: '.15s',
+                }}
+              >
+                {activeChannelId === ch.id && !activeDm && (
+                  <div style={{ position: 'absolute', left: 0, top: 4, bottom: 4, width: 3, background: '#1B6EF3', borderRadius: '0 3px 3px 0' }} />
+                )}
+                <span style={{ fontSize: 14, color: '#6B93C4', width: 16, flexShrink: 0, textAlign: 'center' }}>
+                  {ch.type === 'private' ? '🔒' : '#'}
+                </span>
+                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ch.name}</span>
+                {/* Kebab menu — admin only */}
+                {isOwner && hoveredChannel === ch.id && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setChannelMenuOpen(channelMenuOpen === ch.id ? null : ch.id); }}
+                    style={{ marginLeft: 'auto', padding: '2px 4px', background: 'rgba(255,255,255,.08)', border: 'none', borderRadius: 4, cursor: 'pointer', color: '#7FA8D4', display: 'flex', alignItems: 'center' }}
+                  >
+                    <MoreHorizontal size={13} />
+                  </button>
+                )}
+              </button>
             )}
-            <span style={{ fontSize: 14, color: '#6B93C4', width: 16, flexShrink: 0, textAlign: 'center' }}>
-              {ch.type === 'private' ? '🔒' : '#'}
-            </span>
-            <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ch.name}</span>
-          </button>
+
+            {/* Channel context menu */}
+            {channelMenuOpen === ch.id && (
+              <div style={{
+                position: 'absolute', right: 8, top: '100%', zIndex: 50,
+                background: '#0F1E35', border: '1px solid rgba(255,255,255,.12)',
+                borderRadius: 8, padding: '4px', minWidth: 130,
+                boxShadow: '0 8px 24px rgba(0,0,0,.4)',
+              }} onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => { setEditingChannel(ch.id); setEditChannelName(ch.name); setChannelMenuOpen(null); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 10px', background: 'none', border: 'none', color: '#EEF4FF', fontSize: 13, cursor: 'pointer', borderRadius: 5, textAlign: 'left' }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.06)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'none'}
+                >✏️ Rename</button>
+                <button
+                  onClick={() => { handleDeleteChannel(ch); setChannelMenuOpen(null); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '7px 10px', background: 'none', border: 'none', color: '#EF5350', fontSize: 13, cursor: 'pointer', borderRadius: 5, textAlign: 'left' }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(239,83,80,.08)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'none'}
+                >🗑️ Delete</button>
+              </div>
+            )}
+          </div>
         ))}
 
-        {/* B2B Spaces */}
+        {/* Active B2B Spaces */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 5px', fontSize: 11, fontWeight: 800, color: 'rgba(150,190,240,.65)', textTransform: 'uppercase', letterSpacing: '.8px' }}>
           <span>External · B2B</span>
-          <button
-            onClick={onB2BClick}
-            style={{ fontSize: 11, fontWeight: 700, color: '#00B4D8', background: 'rgba(0,180,216,.1)', border: '1px solid rgba(0,180,216,.25)', borderRadius: 5, padding: '2px 8px', cursor: 'pointer' }}
-          >+ Invite</button>
+          {isOwner && (
+            <button
+              onClick={onB2BClick}
+              style={{ fontSize: 11, fontWeight: 700, color: '#00B4D8', background: 'rgba(0,180,216,.1)', border: '1px solid rgba(0,180,216,.25)', borderRadius: 5, padding: '2px 8px', cursor: 'pointer' }}
+            >+ Invite</button>
+          )}
         </div>
 
-        {b2bSpaces.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'rgba(150,190,240,.4)', padding: '4px 16px 8px' }}>No B2B spaces yet</div>
+        {activeB2BSpaces.length === 0 ? (
+          <div style={{ fontSize: 12, color: 'rgba(150,190,240,.4)', padding: '4px 16px 8px' }}>No active B2B spaces</div>
         ) : (
-          b2bSpaces.map(space => {
+          activeB2BSpaces.map(space => {
             const isOpen = openB2B === space.id;
             const initB2B = space.company_name?.slice(0, 2).toUpperCase() || 'B2';
             return (
@@ -199,36 +298,72 @@ export default function WorkspaceSidebar({
           })
         )}
 
-        {/* Direct Messages — show online workspace members */}
+        {/* Pending B2B Invites — admin only */}
+        {isOwner && pendingB2BSpaces.length > 0 && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 14px 5px', fontSize: 11, fontWeight: 800, color: 'rgba(255,143,0,.6)', textTransform: 'uppercase', letterSpacing: '.8px' }}>
+              <Clock size={11} />
+              <span>Pending Invites</span>
+            </div>
+            {pendingB2BSpaces.map(space => (
+              <div key={space.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', opacity: 0.7 }}>
+                <div style={{ width: 20, height: 20, borderRadius: 4, background: 'rgba(255,143,0,.2)', border: '1px solid rgba(255,143,0,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#FF8F00', flexShrink: 0 }}>
+                  {space.company_name?.slice(0, 2).toUpperCase() || 'B2'}
+                </div>
+                <span style={{ fontSize: 12, color: '#FF8F00', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{space.company_name}</span>
+                <button
+                  onClick={() => onResendB2BInvite && onResendB2BInvite(space)}
+                  title="Resend invite"
+                  style={{ fontSize: 10, fontWeight: 700, color: '#FF8F00', background: 'rgba(255,143,0,.1)', border: '1px solid rgba(255,143,0,.25)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                >↩ Resend</button>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* Direct Messages */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 5px', fontSize: 11, fontWeight: 800, color: 'rgba(150,190,240,.65)', textTransform: 'uppercase', letterSpacing: '.8px' }}>
-          <span>Team · Online</span>
+          <span>Direct Messages</span>
         </div>
-        {onlineMembers.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'rgba(150,190,240,.35)', padding: '2px 16px 8px' }}>No one else online</div>
+        {!workspace?.members || workspace.members.length === 1 ? (
+          <div style={{ fontSize: 12, color: 'rgba(150,190,240,.35)', padding: '2px 16px 8px' }}>No other members</div>
         ) : (
-          onlineMembers.filter(m => m.user_email !== user?.email).map(m => (
-            <div key={m.user_email} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 16px' }}>
+          workspace.members.filter(m => m.email !== user?.email).map(m => {
+            const isOnline = onlineEmails.has(m.email);
+            const statusColor = isOnline ? '#00C853' : '#4B5563';
+            const isActive = activeDm === m.email;
+            return (
+            <button key={m.email} onClick={() => { setActiveDm(m.email); setActiveChannelId(null); }} style={{ 
+              display: 'flex', alignItems: 'center', gap: 8, padding: '7px 16px', 
+              background: isActive ? 'rgba(27,110,243,.14)' : 'transparent',
+              border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer',
+              position: 'relative', transition: '.15s'
+            }}
+            onMouseOver={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,.03)'; }}
+            onMouseOut={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+            >
+              {isActive && (
+                <div style={{ position: 'absolute', left: 0, top: 4, bottom: 4, width: 3, background: '#1B6EF3', borderRadius: '0 3px 3px 0' }} />
+              )}
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <div style={{
                   width: 24, height: 24, borderRadius: 6,
-                  background: `hsl(${(m.user_email.charCodeAt(0) * 37) % 360},55%,40%)`,
+                  background: `hsl(${(m.email.charCodeAt(0) * 37) % 360},55%,40%)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 9, fontWeight: 800, color: '#fff',
                 }}>
-                  {(m.user_name || m.user_email)[0].toUpperCase()}
+                  {m.email[0].toUpperCase()}
                 </div>
-                <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, background: m.status === 'away' ? '#FF8F00' : '#00C853', borderRadius: '50%', border: '2px solid #0B1628' }} />
+                <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, background: statusColor, borderRadius: '50%', border: '2px solid #0B1628', boxShadow: isOnline ? '0 0 4px #00C853' : 'none' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#7FA8D4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {m.user_name || m.user_email.split('@')[0]}
+                <div style={{ fontSize: 13, fontWeight: isActive ? 600 : 500, color: isActive ? '#EEF4FF' : '#7FA8D4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {m.email.split('@')[0]}
                 </div>
+                {m.status === 'invited' && <div style={{ fontSize: 10, color: '#FF8F00', fontWeight: 600 }}>Invited</div>}
               </div>
-              <div style={{ fontSize: 10, color: m.status === 'away' ? '#FF8F00' : '#00C853', fontWeight: 700 }}>
-                {m.status === 'away' ? 'Away' : 'Online'}
-              </div>
-            </div>
-          ))
+            </button>
+          )})
         )}
       </div>
 
@@ -280,6 +415,44 @@ export default function WorkspaceSidebar({
               disabled={!newChannelName}
               style={{ width: '100%', padding: '10px', background: '#1B6EF3', border: 'none', borderRadius: 8, color: '#fff', fontSize: 14, fontWeight: 700, cursor: newChannelName ? 'pointer' : 'not-allowed', opacity: newChannelName ? 1 : 0.5 }}
             >Create Channel</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DM Picker dialog */}
+      <Dialog open={showDmPicker} onOpenChange={setShowDmPicker}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New Direct Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-2">
+            {members.filter(m => m.email !== user?.email && m.status !== 'invited').length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#7FA8D4', fontSize: 14, padding: '20px 0' }}>No other active members yet. Invite someone first!</div>
+            ) : (
+              members.filter(m => m.email !== user?.email && m.status !== 'invited').map(m => {
+                const isOnline = onlineEmails.has(m.email);
+                return (
+                  <button
+                    key={m.email}
+                    onClick={() => { setActiveDm(m.email); setActiveChannelId(null); setShowDmPicker(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 8, cursor: 'pointer', transition: '.15s', textAlign: 'left' }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(27,110,243,.15)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: `hsl(${(m.email.charCodeAt(0) * 37) % 360},55%,40%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff' }}>
+                        {m.email[0].toUpperCase()}
+                      </div>
+                      <div style={{ position: 'absolute', bottom: -1, right: -1, width: 10, height: 10, background: isOnline ? '#00C853' : '#4B5563', borderRadius: '50%', border: '2px solid #1a1a2e' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#EEF4FF' }}>{m.email.split('@')[0]}</div>
+                      <div style={{ fontSize: 11, color: isOnline ? '#00C853' : '#4B5563' }}>{isOnline ? 'Online' : 'Offline'}</div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </DialogContent>
       </Dialog>

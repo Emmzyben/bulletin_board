@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { Building2, Loader2, LogIn } from 'lucide-react';
+import { Building2, Loader2, LogIn, CheckCircle2 } from 'lucide-react';
 import { ECOSYSTEMS } from '@/lib/ecosystems';
 import { toast } from 'sonner';
+import { sendWorkspaceInviteEmail } from '@/hooks/email';
+import { sendWorkspaceInviteEmail as sendB2BInviteEmail } from '@/hooks/email';
 
 export default function Workspace() {
   const { user, navigateToLogin } = useAuth();
@@ -68,11 +70,26 @@ export default function Workspace() {
       const { data, error } = await supabase
         .from('b2b_spaces')
         .select('*')
-        .eq('workspace_id', workspace.id);
+        .or(`workspace_id.eq.${workspace.id},admin_email.eq.${user?.email}`);
       if (error) throw error;
       return data || [];
     },
     enabled: !!workspace?.id,
+  });
+
+  const { data: incomingB2BRequests = [] } = useQuery({
+    queryKey: ['incomingB2BRequests', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const { data, error } = await supabase
+        .from('b2b_spaces')
+        .select('*')
+        .eq('admin_email', user.email)
+        .eq('status', 'pending');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.email,
   });
 
   // Real-time subscriptions for channels, B2B spaces, and workspace
@@ -85,6 +102,10 @@ export default function Workspace() {
         queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'b2b_spaces', filter: `workspace_id=eq.${workspace.id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['b2bSpaces', workspace.id] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'b2b_spaces', filter: `admin_email=eq.${user?.email}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ['incomingB2BRequests', user?.email] });
         queryClient.invalidateQueries({ queryKey: ['b2bSpaces', workspace.id] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces', filter: `id=eq.${workspace.id}` }, () => {
@@ -141,6 +162,51 @@ export default function Workspace() {
     setNewWsEco('');
   };
 
+  const isOwner = workspace?.owner_email === user?.email;
+
+  const handleRemoveMember = async (memberEmail) => {
+    if (!window.confirm(`Remove ${memberEmail} from the workspace?`)) return;
+    const currentMembers = workspace.members || [];
+    const newMembers = currentMembers.filter(m => m.email !== memberEmail);
+    const { error } = await supabase
+      .from('workspaces')
+      .update({ members: newMembers })
+      .eq('id', workspace.id);
+    if (error) {
+      toast.error('Failed to remove member');
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['workspaces', user?.email] });
+      toast.success(`${memberEmail} removed from workspace`);
+    }
+  };
+
+  const handleResendB2BInvite = async (space) => {
+    try {
+      const success = await sendB2BInviteEmail(space.admin_email, user?.full_name, workspace.name);
+      if (success) {
+        toast.success(`Invite resent to ${space.company_name}`);
+      } else {
+        toast.error('Failed to resend invite');
+      }
+    } catch (e) {
+      toast.error('Failed to resend invite');
+    }
+  };
+
+  const handleAcceptB2BInvite = async (space) => {
+    const { error } = await supabase
+      .from('b2b_spaces')
+      .update({ status: 'active' })
+      .eq('id', space.id);
+    if (error) {
+      toast.error('Failed to accept invite');
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['incomingB2BRequests', user?.email] });
+      queryClient.invalidateQueries({ queryKey: ['b2bSpaces', workspace?.id] });
+      toast.success('Invite accepted successfully!');
+    }
+  };
+
   if (loadingWs) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
@@ -166,7 +232,30 @@ export default function Workspace() {
 
   if (!workspace) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-3.5rem)] gap-6 overflow-y-auto py-10">
+        
+        {incomingB2BRequests.length > 0 && (
+          <Card className="p-6 max-w-md w-full border-[#00B4D8] bg-[#00B4D8]/10 shadow-[0_0_20px_rgba(0,180,216,0.15)]">
+            <h2 className="text-lg font-bold mb-3 flex items-center gap-2 text-[#00B4D8]">
+              <Building2 className="w-5 h-5" /> Pending B2B Invitations
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">You have been invited to collaborate. Accept to join their shared channels.</p>
+            <div className="space-y-3">
+              {incomingB2BRequests.map(space => (
+                <div key={space.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/50">
+                  <div className="min-w-0 flex-1 mr-3">
+                    <div className="font-semibold text-sm truncate">{space.company_name}</div>
+                    <div className="text-xs text-muted-foreground truncate">Role: {space.relationship_type || 'Partner'}</div>
+                  </div>
+                  <Button size="sm" onClick={() => handleAcceptB2BInvite(space)} className="bg-[#00B4D8] hover:bg-[#00B4D8]/90 text-white shrink-0">
+                    Accept
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         <Card className="p-8 max-w-md w-full text-center">
           <Building2 className="w-12 h-12 text-primary mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Create Your Workspace</h2>
@@ -218,8 +307,33 @@ export default function Workspace() {
   ];
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 62px)' }}>
-      <div style={{ width: 224, flexShrink: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 62px)' }}>
+      
+      {/* Top Banner for Incoming B2B Requests */}
+      {incomingB2BRequests.length > 0 && (
+        <div style={{ background: 'linear-gradient(90deg, rgba(0,180,216,0.15), rgba(27,110,243,0.15))', borderBottom: '1px solid rgba(0,180,216,0.3)', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Building2 size={16} color="#00B4D8" />
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#EEF4FF' }}>
+              You have {incomingB2BRequests.length} pending B2B invitation{incomingB2BRequests.length !== 1 ? 's' : ''}.
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {incomingB2BRequests.map(space => (
+              <button
+                key={space.id}
+                onClick={() => handleAcceptB2BInvite(space)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#00B4D8', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,180,216,0.3)' }}
+              >
+                <CheckCircle2 size={14} /> Accept {space.company_name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ width: 224, flexShrink: 0 }}>
         <WorkspaceSidebar
           workspace={workspace}
           channels={channels}
@@ -229,12 +343,14 @@ export default function Workspace() {
           setActiveDm={setActiveDm}
           b2bSpaces={b2bSpaces}
           onB2BClick={() => setShowB2B(true)}
+          onResendB2BInvite={handleResendB2BInvite}
           user={user}
         />
       </div>
       <MessageArea
         channelId={activeChannelId}
         channelName={activeChannel?.name || ''}
+        activeDm={activeDm}
         workspaceId={workspace.id}
         user={user}
       />
@@ -256,8 +372,10 @@ export default function Workspace() {
           {members.map((m, i) => {
             const initials = m.email ? m.email.slice(0, 2).toUpperCase() : '??';
             const isYou = m.email === user?.email;
+            const roleBadgeColor = m.role === 'owner' ? '#7C4DFF' : m.status === 'invited' ? '#FF8F00' : '#1B6EF3';
+            const roleLabel = m.role === 'owner' ? 'Owner' : m.status === 'invited' ? 'Invited' : 'Member';
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 16px', cursor: 'pointer', borderRadius: 8, margin: '0 4px', transition: '.15s' }}
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 16px', cursor: 'default', borderRadius: 8, margin: '0 4px', transition: '.15s' }}
                 onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
                 onMouseOut={e => e.currentTarget.style.background = 'transparent'}
               >
@@ -271,14 +389,25 @@ export default function Workspace() {
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#EEF4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {m.email?.split('@')[0]}{isYou ? ' (you)' : ''}
                   </div>
-                  <div style={{ fontSize: 10, color: '#2E4D6E', fontWeight: 600, textTransform: 'capitalize' }}>{m.role}</div>
+                  <div style={{ fontSize: 10, color: roleBadgeColor, fontWeight: 700, textTransform: 'capitalize' }}>{roleLabel}</div>
                 </div>
+                {/* Remove button — owner only, not for self */}
+                {isOwner && !isYou && (
+                  <button
+                    onClick={() => handleRemoveMember(m.email)}
+                    title="Remove member"
+                    style={{ padding: '2px 6px', background: 'rgba(239,83,80,.1)', border: '1px solid rgba(239,83,80,.2)', borderRadius: 4, color: '#EF5350', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(239,83,80,.25)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(239,83,80,.1)'}
+                  >✕</button>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Invite button */}
+        {/* Invite button — owner only */}
+        {isOwner && (
         <div style={{ padding: '12px 12px 16px', borderTop: '1px solid rgba(255,255,255,.07)' }}>
           {showInvite ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -297,8 +426,23 @@ export default function Workspace() {
                   onClick={async () => {
                     setInviting(true);
                     try {
-                      // Simulating invite for now as we don't have a specific Supabase function for this in the backend
-                      // In a real app, this would use supabase.auth.admin.inviteUserByEmail or an edge function
+                      // Send the real email via our PHP backend
+                      const success = await sendWorkspaceInviteEmail(inviteEmail, user?.full_name, workspace.name);
+                      
+                      if (!success) {
+                        throw new Error('Failed to send invite email');
+                      }
+
+                      // Update the workspace members array in Supabase
+                      const currentMembers = workspace.members || [];
+                      if (!currentMembers.find(m => m.email === inviteEmail)) {
+                        const newMembers = [...currentMembers, { email: inviteEmail, role: 'member', status: 'invited' }];
+                        await supabase
+                          .from('workspaces')
+                          .update({ members: newMembers })
+                          .eq('id', workspace.id);
+                      }
+
                       setInviteMsg('✅ Invite sent!');
                       setInviteEmail('');
                       setTimeout(() => { setShowInvite(false); setInviteMsg(''); }, 1500);
@@ -327,6 +471,7 @@ export default function Workspace() {
             </button>
           )}
         </div>
+        )}
       </div>
 
       <B2BInviteModal
@@ -334,6 +479,7 @@ export default function Workspace() {
         onClose={() => setShowB2B(false)}
         workspaceId={workspace.id}
       />
+      </div>
     </div>
   );
 }

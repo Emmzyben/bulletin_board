@@ -10,6 +10,15 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // Helper to extract full_name from Supabase user metadata
+  const formatUser = (u) => {
+    if (!u) return null;
+    return {
+      ...u,
+      full_name: u.user_metadata?.full_name || u.raw_user_meta_data?.full_name || u.full_name
+    };
+  };
+
   useEffect(() => {
     // Check initial session
     const initSession = async () => {
@@ -19,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Initial session check failed:', error);
         setAuthError(error);
       } else if (session) {
-        setUser(session.user);
+        setUser(formatUser(session.user));
         setIsAuthenticated(true);
       }
       setIsLoadingAuth(false);
@@ -31,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        setUser(session.user);
+        setUser(formatUser(session.user));
         setIsAuthenticated(true);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -60,19 +69,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
-    // Redirect to a login page or trigger a login modal
-    // For now, we'll redirect to a /login route if it exists, or just log a warning
-    console.warn('navigateToLogin called. No custom login route defined yet.');
-    // window.location.href = '/login'; 
-    // Since we don't have a login page yet, we might want to keep the Base44 one if they still use it for SSO
-    // But the goal is to migrate. Let's assume there's a login route.
     window.location.href = '/login';
   };
 
   const checkUserAuth = async () => {
     const { data: { user: sbUser }, error } = await supabase.auth.getUser();
     if (sbUser) {
-      setUser(sbUser);
+      setUser(formatUser(sbUser));
       setIsAuthenticated(true);
     } else {
       setUser(null);

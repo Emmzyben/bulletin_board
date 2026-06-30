@@ -287,7 +287,7 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
             </div>
 
             {/* Share Row */}
-            {showShare && (
+            {showShare && ( 
               <div className="flex items-center gap-2 mt-2 pt-2 border-t flex-wrap">
                 <span className="text-xs text-muted-foreground font-medium">Share:</span>
                 <a

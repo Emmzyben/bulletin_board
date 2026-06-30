@@ -108,8 +108,10 @@ export function usePresence({ user, workspaceId, channelId }) {
   useEffect(() => {
     if (!workspaceId) return;
     
+    // Generate a unique channel name for this hook instance
+    const channelId = `presence:${workspaceId}:${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel(`presence:${workspaceId}`)
+      .channel(channelId)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 

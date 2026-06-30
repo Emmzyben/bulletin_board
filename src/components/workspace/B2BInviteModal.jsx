@@ -52,7 +52,6 @@ export default function B2BInviteModal({ open, onClose, workspaceId }) {
             name: channelName,
             workspace_id: workspaceId,
             type: 'b2b',
-            is_private: true // B2B channels are private by default
           }]);
         
         if (channelError) throw channelError;
