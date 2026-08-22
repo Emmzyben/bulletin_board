@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { sendB2BInviteEmail } from '@/hooks/email';
 
 const RELATIONSHIP_TYPES = [
   { id: 'client', label: 'Client', icon: '🔵', desc: 'You deliver work to them' },
@@ -15,7 +16,7 @@ const RELATIONSHIP_TYPES = [
   { id: 'vendor', label: 'Vendor', icon: '⚫', desc: 'Supplying to you' },
 ];
 
-export default function B2BInviteModal({ open, onClose, workspaceId }) {
+export default function B2BInviteModal({ open, onClose, workspaceId, workspaceName, inviterName }) {
   const [companyName, setCompanyName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [relationship, setRelationship] = useState('');
@@ -29,36 +30,30 @@ export default function B2BInviteModal({ open, onClose, workspaceId }) {
 
     try {
       // 1. Create the B2B Space record
-      const { data: b2bData, error: b2bError } = await supabase
-        .from('b2b_spaces')
-        .insert([{
-          company_name: companyName,
-          admin_email: adminEmail,
-          relationship_type: relationship,
-          workspace_id: workspaceId,
-          status: 'pending',
-          shared_channels: channelName ? [channelName] : [],
-        }])
-        .select()
-        .single();
-
-      if (b2bError) throw b2bError;
+      await api.post('/b2b', {
+        company_name: companyName,
+        admin_email: adminEmail,
+        relationship_type: relationship,
+        workspace_id: workspaceId,
+        status: 'pending',
+        shared_channels: channelName ? [channelName] : [],
+      });
 
       // 2. If a shared channel is specified, create it in the channels table
       if (channelName) {
-        const { error: channelError } = await supabase
-          .from('channels')
-          .insert([{
-            name: channelName,
-            workspace_id: workspaceId,
-            type: 'b2b',
-          }]);
-        
-        if (channelError) throw channelError;
+        await api.post('/channels', {
+          name: channelName,
+          workspace_id: workspaceId,
+          type: 'b2b',
+        });
       }
 
       queryClient.invalidateQueries({ queryKey: ['b2bSpaces'] });
       queryClient.invalidateQueries({ queryKey: ['channels'] });
+      
+      // 3. Send the invite email
+      await sendB2BInviteEmail(adminEmail, inviterName, workspaceName);
+
       toast.success(`Invite sent to ${companyName}`);
 
       setCompanyName('');

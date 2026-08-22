@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/api/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,44 +15,24 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const { signUp } = useAuth();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName || email.split('@')[0],
-        }
-      }
-    });
-
-    if (error) {
-      toast.error(error.message);
-    } else if (data.session) {
+    try {
+      await signUp(email, password, { full_name: fullName || email.split('@')[0] });
       toast.success('Welcome to Bulletin Board!');
       navigate('/');
-    } else {
-      toast.success('Registration successful! Please check your email for confirmation.');
-      navigate('/login');
+    } catch (error) {
+      toast.error(error.message || 'Failed to register');
     }
     setLoading(false);
   };
 
   const handleOAuthLogin = async (provider) => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-
-    if (error) {
-      toast.error(`Failed to sign up with ${provider}`);
-    }
+    toast.error(`OAuth login not implemented for ${provider} in Express backend yet.`);
   };
 
   return (

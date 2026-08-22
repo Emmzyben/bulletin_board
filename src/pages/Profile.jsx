@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { getEcosystem, getKarmaLevel } from '@/lib/ecosystems';
 import PostCard from '../components/feed/PostCard';
 import { toast } from 'sonner';
-import { FileText, BarChart3, MessageSquare, Bookmark } from 'lucide-react';
+import { FileText, BarChart3, MessageSquare, Bookmark, Camera, Settings, AlertTriangle } from 'lucide-react';
+import { pinata } from '@/lib/pinata';
+import { useAuth } from '@/lib/AuthContext';
 
 const S = {
   page: { background: 'linear-gradient(160deg,#071020 0%,#0B1628 35%,#0A1F1A 70%,#0D1408 100%)', minHeight: '100%', height: '100%', overflowY: 'auto', color: '#EEF4FF', fontFamily: 'Inter, sans-serif' },
@@ -18,6 +20,7 @@ const tabs = [
   { id: 'polls', icon: BarChart3, label: 'Polls' },
   { id: 'comments', icon: MessageSquare, label: 'Comments' },
   { id: 'saved', icon: Bookmark, label: 'Saved' },
+  { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
 const quickLinks = [
@@ -27,39 +30,41 @@ const quickLinks = [
 
 export default function Profile() {
   const { user } = useOutletContext();
+  const { refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState('posts');
   const [coverUrl, setCoverUrl] = useState(user?.cover_url || null);
   const [coverPosition, setCoverPosition] = useState(user?.cover_position !== undefined ? user.cover_position : 50);
-  const [followed, setFollowed] = useState(false);
-  const [showDots, setShowDots] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [saving, setSaving] = useState(false);
   const coverInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
   const coverDragRef = useRef(null);
   const dragState = useRef(null);
 
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image uploads are allowed.');
+      return;
+    }
+
     setUploadingCover(true);
     
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-      const filePath = `covers/${fileName}`;
+      const { url } = await api.get('/upload/presigned_url');
+      const upload = await pinata.upload.public.file(file).url(url);
+      
+      if (!upload.cid) {
+        throw new Error('Upload failed: No CID returned');
+      }
 
-      const { data, error: uploadError } = await supabase.storage
-        .from('assets')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('assets')
-        .getPublicUrl(filePath);
-
-      await supabase.from('users').update({ cover_url: publicUrl }).eq('email', user.email);
+      const publicUrl = await pinata.gateways.public.convert(upload.cid);
+      await api.put('/users/profile', { cover_url: publicUrl });
       
       setCoverUrl(publicUrl);
       setUploadingCover(false);
@@ -71,10 +76,42 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image uploads are allowed.');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const { url } = await api.get('/upload/presigned_url');
+      const upload = await pinata.upload.public.file(file).url(url);
+
+      if (!upload.cid) throw new Error('Upload failed');
+
+      const publicUrl = await pinata.gateways.public.convert(upload.cid);
+      await api.put('/users/profile', { avatar_url: publicUrl });
+      setAvatarUrl(publicUrl);
+      await refreshUser(); // sync global user context so TopNav updates
+      toast.success('Profile photo updated!');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to upload profile photo');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleSavePosition = async () => {
     setSaving(true);
-    const { error } = await supabase.from('users').update({ cover_position: coverPosition }).eq('email', user.email);
-    if (error) toast.error('Failed to save position');
+    try {
+      await api.put('/users/profile', { cover_position: coverPosition });
+    } catch (error) {
+      toast.error('Failed to save position');
+    }
     setSaving(false);
     setAdjusting(false);
   };
@@ -113,13 +150,12 @@ export default function Profile() {
     queryKey: ['userPosts', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('author_email', user.email)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/posts?author_email=${user.email}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!user?.email,
   });
@@ -128,12 +164,12 @@ export default function Profile() {
     queryKey: ['savedPosts', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('saved_posts')
-        .select('*')
-        .eq('user_email', user.email);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/saved_posts?user_email=${user.email}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!user?.email,
   });
@@ -143,13 +179,12 @@ export default function Profile() {
     queryFn: async () => {
       if (!savedPostRefs.length) return [];
       const ids = savedPostRefs.map(s => s.post_id);
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .in('id', ids)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/posts?ids=${ids.join(',')}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: savedPostRefs.length > 0,
   });
@@ -233,48 +268,36 @@ export default function Profile() {
           {/* Avatar row */}
           <div style={{ padding: '0 28px 24px', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-              <div style={{
-                width: 96, height: 96, borderRadius: 20,
-                background: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 36, fontWeight: 800, color: '#fff',
-                border: '4px solid #0B1628', marginTop: -48, flexShrink: 0,
-                boxShadow: '0 4px 20px rgba(124,77,255,.35)',
-              }}>{initials}</div>
-
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', position: 'relative' }}>
-                <button
-                  onClick={() => { window.location.href = `mailto:${user?.email}`; }}
-                  style={{ padding: '8px 18px', borderRadius: 20, border: '1px solid rgba(255,255,255,.15)', background: 'transparent', color: '#EEF4FF', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  💬 Message
-                </button>
-                <button
-                  onClick={() => { setFollowed(f => !f); toast.success(followed ? 'Unfollowed' : 'Following!'); }}
-                  style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: followed ? 'rgba(27,110,243,.2)' : 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: followed ? 'none' : '0 2px 12px rgba(27,110,243,.4)', border: followed ? '1px solid rgba(27,110,243,.4)' : 'none' }}
-                >
-                  {followed ? '✓ Following' : '+ Follow'}
-                </button>
-                <div style={{ position: 'relative' }}>
-                  <button
-                    onClick={() => setShowDots(d => !d)}
-                    style={{ width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(255,255,255,.15)', background: 'transparent', color: '#7FA8D4', fontSize: 16, cursor: 'pointer' }}
-                  >⋯</button>
-                  {showDots && (
-                    <div style={{ position: 'absolute', top: 44, right: 0, background: '#0E1828', border: '1px solid rgba(255,255,255,.1)', borderRadius: 10, padding: '6px 0', minWidth: 160, zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
-                      {[
-                        { label: '🔗 Copy profile link', action: () => { navigator.clipboard?.writeText(window.location.href); toast.success('Link copied!'); } },
-                        { label: '🚩 Report user', action: () => toast.info('Report submitted') },
-                        { label: '🚫 Block user', action: () => toast.info('User blocked') },
-                      ].map(item => (
-                        <button key={item.label} onClick={() => { item.action(); setShowDots(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 16px', background: 'none', border: 'none', color: '#7FA8D4', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
-                          onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.05)'}
-                          onMouseOut={e => e.currentTarget.style.background = 'none'}
-                        >{item.label}</button>
-                      ))}
-                    </div>
-                  )}
+              {/* Clickable avatar with upload overlay */}
+              <div style={{ position: 'relative', marginTop: -48, flexShrink: 0 }}>
+                <div style={{
+                  width: 96, height: 96, borderRadius: 20,
+                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 36, fontWeight: 800, color: '#fff',
+                  border: '4px solid #0B1628',
+                  boxShadow: '0 4px 20px rgba(124,77,255,.35)',
+                  overflow: 'hidden',
+                }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : initials}
                 </div>
+                <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  title="Change profile photo"
+                  style={{
+                    position: 'absolute', bottom: -4, right: -4,
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: '#1B6EF3', border: '2px solid #0B1628',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', color: '#fff',
+                  }}
+                >
+                  {uploadingAvatar ? '⏳' : <Camera size={13} />}
+                </button>
               </div>
             </div>
 
@@ -413,6 +436,163 @@ export default function Profile() {
               </div>
             )}
           </div>
+        )}
+        {activeTab === 'settings' && (
+          <ProfileSettings user={user} refreshUser={refreshUser} S={S} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProfileSettings({ user, refreshUser, S }) {
+  const [formData, setFormData] = useState({
+    full_name: user?.full_name || '',
+    bio: user?.bio || '',
+    company: user?.company || '',
+    location: user?.location || '',
+    primary_ecosystem: user?.primary_ecosystem || '',
+  });
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      await api.put('/users/profile', formData);
+      await refreshUser();
+      toast.success('Profile updated successfully');
+    } catch (err) {
+      toast.error('Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      return toast.error('New passwords do not match');
+    }
+    setSavingPassword(true);
+    try {
+      await api.put('/users/profile/password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      toast.success('Password updated successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to update password');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await api.delete('/users/profile');
+      toast.success('Account deleted successfully');
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    } catch (err) {
+      toast.error('Failed to delete account');
+    }
+  };
+
+  const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(0,0,0,.2)', color: '#fff', fontSize: 14, outline: 'none', transition: 'border-color 0.2s' };
+  const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' };
+  const sectionStyle = { ...S.card, padding: 24, marginBottom: 20 };
+  const btnStyle = { padding: '10px 20px', borderRadius: 8, background: '#1B6EF3', color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', transition: '0.2s', opacity: (savingProfile || savingPassword) ? 0.7 : 1 };
+
+  return (
+    <div style={{ maxWidth: 600 }}>
+      <form onSubmit={handleProfileSubmit} style={sectionStyle}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, color: '#EEF4FF' }}>Profile Information</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>Full Name</label>
+            <input required style={inputStyle} value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} />
+          </div>
+          <div>
+            <label style={labelStyle}>Bio</label>
+            <textarea style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }} value={formData.bio} onChange={e => setFormData({ ...formData, bio: e.target.value })} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Company / Org</label>
+              <input style={inputStyle} value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} />
+            </div>
+            <div>
+              <label style={labelStyle}>Location</label>
+              <input style={inputStyle} value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Primary Ecosystem</label>
+            <select style={inputStyle} value={formData.primary_ecosystem} onChange={e => setFormData({ ...formData, primary_ecosystem: e.target.value })}>
+              <option value="">Select an ecosystem...</option>
+              {['technology', 'healthcare', 'corporate', 'education', 'government', 'real_estate', 'hospitality', 'careers', 'entertainment'].map(e => (
+                <option key={e} value={e}>{e.charAt(0).toUpperCase() + e.slice(1).replace('_', ' ')}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button type="submit" disabled={savingProfile} style={btnStyle}>{savingProfile ? 'Saving...' : 'Save Profile'}</button>
+          </div>
+        </div>
+      </form>
+
+      <form onSubmit={handlePasswordSubmit} style={sectionStyle}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, color: '#EEF4FF' }}>Change Password</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={labelStyle}>Current Password</label>
+            <input type="password" required style={inputStyle} value={passwordData.currentPassword} onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })} />
+          </div>
+          <div>
+            <label style={labelStyle}>New Password</label>
+            <input type="password" required style={inputStyle} value={passwordData.newPassword} onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })} />
+          </div>
+          <div>
+            <label style={labelStyle}>Confirm New Password</label>
+            <input type="password" required style={inputStyle} value={passwordData.confirmPassword} onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} />
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button type="submit" disabled={savingPassword} style={{ ...btnStyle, background: 'rgba(255,255,255,.1)' }}>{savingPassword ? 'Updating...' : 'Update Password'}</button>
+          </div>
+        </div>
+      </form>
+
+      <div style={{ ...sectionStyle, border: '1px solid rgba(239,68,68,.3)' }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AlertTriangle size={18} /> Danger Zone
+        </h3>
+        <p style={{ color: '#94A3B8', fontSize: 14, marginBottom: 20 }}>
+          Deleting your account is permanent. All your posts, comments, and votes will be permanently removed. This action cannot be undone.
+        </p>
+        
+        {showDeleteConfirm ? (
+          <div style={{ padding: 16, background: 'rgba(239,68,68,.1)', borderRadius: 8, border: '1px solid rgba(239,68,68,.2)' }}>
+            <p style={{ fontWeight: 600, color: '#FCA5A5', marginBottom: 12, fontSize: 14 }}>Are you absolutely sure you want to delete your account?</p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={handleDeleteAccount} style={{ padding: '8px 16px', borderRadius: 6, background: '#EF4444', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>Yes, delete my account</button>
+              <button onClick={() => setShowDeleteConfirm(false)} style={{ padding: '8px 16px', borderRadius: 6, background: 'rgba(255,255,255,.1)', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowDeleteConfirm(true)} style={{ padding: '10px 20px', borderRadius: 8, background: 'rgba(239,68,68,.1)', color: '#EF4444', fontSize: 14, fontWeight: 600, border: '1px solid rgba(239,68,68,.3)', cursor: 'pointer', transition: '0.2s' }}>
+            Delete Account
+          </button>
         )}
       </div>
     </div>

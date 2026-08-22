@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useOutletContext, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, TrendingUp, MessageSquare, Search, Trophy } from 'lucide-react';
 import { ECOSYSTEMS } from '@/lib/ecosystems';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-
-const ECO_KEYS = ECOSYSTEMS.map(e => e.id);
+import { useAuth } from '@/lib/AuthContext';
 
 const ECO_DESCRIPTIONS = {
   technology:   'Discuss software, AI, hardware, startups, and the future of tech.',
@@ -25,22 +24,21 @@ const ECO_DESCRIPTIONS = {
 
 export default function Communities() {
   const { user, navigateToLogin } = useOutletContext();
+  const { refreshUser } = useAuth();
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [joined, setJoined] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('joined_communities') || '[]'); } catch { return []; }
-  });
+  const [search, setSearch] = React.useState('');
+  
+  const joined = user?.joined_communities || [];
 
   const { data: posts = [] } = useQuery({
     queryKey: ['posts-for-communities'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/posts?limit=200');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
@@ -69,14 +67,23 @@ export default function Communities() {
     e.description.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleJoin = (key) => {
+  const handleJoin = async (key) => {
     if (!user) { navigateToLogin(); return; }
     const isJoined = joined.includes(key);
-    const next = isJoined ? joined.filter(k => k !== key) : [...joined, key];
-    setJoined(next);
-    localStorage.setItem('joined_communities', JSON.stringify(next));
     const eco = ECOSYSTEMS.find(e => e.id === key);
-    toast.success(isJoined ? `Left ${eco?.label}` : `Joined ${eco?.label}!`);
+    
+    try {
+      if (isJoined) {
+        await api.delete(`/users/profile/communities/${key}`);
+        toast.success(`Left ${eco?.label}`);
+      } else {
+        await api.post(`/users/profile/communities/${key}`);
+        toast.success(`Joined ${eco?.label}!`);
+      }
+      await refreshUser();
+    } catch (err) {
+      toast.error('An error occurred');
+    }
   };
 
   return (

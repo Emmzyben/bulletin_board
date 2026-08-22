@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend
@@ -40,14 +40,12 @@ export default function Analytics() {
     queryKey: ['myPosts', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('author_email', user.email)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/posts?author_email=${user.email}&limit=100`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!user?.email,
   });
@@ -56,14 +54,12 @@ export default function Analytics() {
     queryKey: ['myComments', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('author_email', user.email)
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/comments?author_email=${user.email}&limit=200`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!user?.email,
   });
@@ -72,13 +68,13 @@ export default function Analytics() {
     queryKey: ['analyticssSaves'],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('saved_posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      return data || [];
+      try {
+        // Assume API fetches saved posts by current user when authenticated.
+        const data = await api.get('/saved_posts');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!user?.email,
   });

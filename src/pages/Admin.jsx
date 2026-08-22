@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import {
   Loader2,
   LayoutDashboard,
@@ -51,12 +51,12 @@ export default function Admin() {
     queryKey: ['workspaces', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('*')
-        .eq('owner_email', user.email);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/workspaces');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!user?.email,
   });
@@ -67,12 +67,12 @@ export default function Admin() {
     queryKey: ['b2bSpaces', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
-      const { data, error } = await supabase
-        .from('b2b_spaces')
-        .select('*')
-        .eq('workspace_id', workspace.id);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/b2b?workspace_id=${workspace.id}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!workspace?.id,
   });

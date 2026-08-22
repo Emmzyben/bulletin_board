@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +9,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ECOSYSTEMS, FLAIRS } from '@/lib/ecosystems';
 import { ImagePlus, Loader2, AlertCircle } from 'lucide-react';
 import RichTextEditor from './RichTextEditor';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-
+import { pinata } from '@/lib/pinata';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
@@ -20,7 +21,17 @@ export default function CreatePostModal({ open, onClose }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [flair, setFlair] = useState('');
-  const [ecosystem, setEcosystem] = useState(user?.primary_ecosystem || '');
+  const joinedCommunities = user?.joined_communities || [];
+  const availableEcosystems = joinedCommunities.length > 0
+    ? ECOSYSTEMS.filter(e => joinedCommunities.includes(e.id))
+    : ECOSYSTEMS;
+  const [ecosystem, setEcosystem] = useState(
+    () => {
+      const primary = user?.primary_ecosystem;
+      if (primary && (joinedCommunities.length === 0 || joinedCommunities.includes(primary))) return primary;
+      return joinedCommunities[0] || '';
+    }
+  );
   const [imageFile, setImageFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -30,15 +41,15 @@ export default function CreatePostModal({ open, onClose }) {
 
   const validateImage = (file) => {
     if (!file) return null;
-    
+
     if (file.size > MAX_IMAGE_SIZE) {
       return 'Image must be smaller than 5MB';
     }
-    
+
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       return 'Only JPEG, PNG, GIF, and WebP images are allowed';
     }
-    
+
     return null;
   };
 
@@ -59,75 +70,47 @@ export default function CreatePostModal({ open, onClose }) {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!title.trim()) {
       newErrors.title = 'Title is required';
     } else if (title.length > 500) {
       newErrors.title = 'Title must be 500 characters or less';
     }
-    
+
     if (!flair) {
       newErrors.flair = 'Please select a flair';
     }
-    
+
     if (!ecosystem) {
       newErrors.ecosystem = 'Please select an ecosystem';
     }
-    
+
     if (flair === 'poll') {
       const validOptions = pollOptions.filter(o => o.trim());
       if (validOptions.length < 2) {
         newErrors.poll = 'Poll must have at least 2 options';
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
 
     try {
       let image_url = '';
       if (imageFile) {
         setIsUploadingImage(true);
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `posts/${fileName}`;
-
         try {
-          const { data, error: uploadError } = await supabase.storage
-            .from('assets')
-            .upload(filePath, imageFile, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (uploadError) {
-            // Provide specific error messages for different failure types
-            const errorMsg = uploadError.message.toLowerCase();
-            
-            if (errorMsg.includes('row-level security') || errorMsg.includes('rls')) {
-              throw new Error('Storage permissions not configured. Please check STORAGE_RLS_SETUP.md for setup instructions.');
-            } else if (errorMsg.includes('bucket not found')) {
-              throw new Error('Storage bucket "assets" not found. Please create it first.');
-            } else if (errorMsg.includes('not found')) {
-              throw new Error('Storage bucket not found. Check Supabase Storage configuration.');
-            } else if (errorMsg.includes('unauthorized')) {
-              throw new Error('Not authorized to upload. Please ensure you are logged in.');
-            } else {
-              throw new Error(`Image upload failed: ${uploadError.message}`);
-            }
+          const { url } = await api.get('/upload/presigned_url');
+          const upload = await pinata.upload.public.file(imageFile).url(url);
+          if (upload.cid) {
+            image_url = await pinata.gateways.public.convert(upload.cid);
           }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('assets')
-            .getPublicUrl(filePath);
-          
-          image_url = publicUrl;
         } finally {
           setIsUploadingImage(false);
         }
@@ -139,7 +122,7 @@ export default function CreatePostModal({ open, onClose }) {
         flair,
         ecosystem,
         image_url,
-        author_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Anonymous',
+        author_name: user?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Anonymous',
         author_email: user?.email || '',
         vote_score: 0,
         upvotes: 0,
@@ -154,25 +137,7 @@ export default function CreatePostModal({ open, onClose }) {
           .map(text => ({ text: text.trim(), votes: 0 }));
       }
 
-      const { error: postError, data: insertedData } = await supabase
-        .from('posts')
-        .insert([postData])
-        .select();
-
-      if (postError) {
-        // Provide specific error messages for different database issues
-        const errorMsg = postError.message.toLowerCase();
-        
-        if (errorMsg.includes('could not find the table') || errorMsg.includes('posts')) {
-          throw new Error('Database table "posts" not found. Please run the database migration. See DATABASE_SCHEMA_SETUP.md');
-        } else if (errorMsg.includes('row-level security')) {
-          throw new Error('Database RLS policy blocked insert. Check you are logged in.');
-        } else if (errorMsg.includes('constraint violation')) {
-          throw new Error('Invalid data provided. Check all required fields are filled.');
-        } else {
-          throw new Error(`Failed to create post: ${postError.message}`);
-        }
-      }
+      await api.post('/posts', postData);
 
       await queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast.success('Post created successfully!');
@@ -185,16 +150,16 @@ export default function CreatePostModal({ open, onClose }) {
       setImageFile(null);
       setPollOptions(['', '']);
       setErrors({});
-      
+
       onClose();
     } catch (error) {
       console.error('Error creating post:', error);
-      
+
       let errorMessage = 'Failed to create post';
       if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
       setErrors(prev => ({ ...prev, submit: errorMessage }));
     } finally {
@@ -216,7 +181,7 @@ export default function CreatePostModal({ open, onClose }) {
               <span>{errors.submit}</span>
             </div>
           )}
-          
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">
@@ -230,12 +195,12 @@ export default function CreatePostModal({ open, onClose }) {
                   {FLAIRS.map(f => {
                     const FlairIcon = f.icon;
                     return (
-                    <SelectItem key={f.id} value={f.id}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <FlairIcon size={14} />
-                        {f.label}
-                      </span>
-                    </SelectItem>
+                      <SelectItem key={f.id} value={f.id}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <FlairIcon size={14} />
+                          {f.label}
+                        </span>
+                      </SelectItem>
                     );
                   })}
                 </SelectContent>
@@ -246,24 +211,41 @@ export default function CreatePostModal({ open, onClose }) {
               <Label className="text-xs text-muted-foreground mb-1.5 block">
                 Ecosystem {errors.ecosystem && <span className="text-red-500">*</span>}
               </Label>
-              <Select value={ecosystem} onValueChange={setEcosystem}>
-                <SelectTrigger className={errors.ecosystem ? 'border-red-500' : ''}>
-                  <SelectValue placeholder="Choose ecosystem" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ECOSYSTEMS.map(e => {
-                    const EcoIcon = e.icon;
-                    return (
-                    <SelectItem key={e.id} value={e.id}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <EcoIcon size={14} />
-                        {e.label}
-                      </span>
-                    </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              {joinedCommunities.length === 0 ? (
+                <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+                  <div>
+                    <p className="text-sm font-semibold text-amber-400">You haven't joined any communities yet.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Join a community to start posting.{' '}
+                      <Link to="/communities" onClick={onClose} className="text-primary underline font-medium hover:text-primary/80 transition-colors">
+                        Browse Communities →
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Select value={ecosystem} onValueChange={setEcosystem}>
+                    <SelectTrigger className={errors.ecosystem ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Choose ecosystem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableEcosystems.map(e => {
+                        const EcoIcon = e.icon;
+                        return (
+                          <SelectItem key={e.id} value={e.id}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <EcoIcon size={14} />
+                              {e.label}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">Showing only your joined communities</p>
+                </>
+              )}
               {errors.ecosystem && <p className="text-xs text-red-500 mt-1">{errors.ecosystem}</p>}
             </div>
           </div>
@@ -290,10 +272,10 @@ export default function CreatePostModal({ open, onClose }) {
 
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Body (optional)</Label>
-            <RichTextEditor 
-              value={body} 
-              onChange={e => setBody(e.target.value)} 
-              placeholder="Add more detail..." 
+            <RichTextEditor
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              placeholder="Add more detail..."
             />
           </div>
 
@@ -335,10 +317,10 @@ export default function CreatePostModal({ open, onClose }) {
               <ImagePlus className="w-5 h-5" />
               <span>{imageFile ? imageFile.name : 'Choose File'}</span>
               {isUploadingImage && <Loader2 className="w-4 h-4 animate-spin" />}
-              <input 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
                 onChange={handleImageChange}
                 disabled={isSubmitting}
               />
@@ -352,7 +334,7 @@ export default function CreatePostModal({ open, onClose }) {
 
           <Button
             onClick={handleSubmit}
-            disabled={!title.trim() || !flair || !ecosystem || isSubmitting || isUploadingImage}
+            disabled={!title.trim() || !flair || !ecosystem || isSubmitting || isUploadingImage || joinedCommunities.length === 0}
             className="w-full"
           >
             {isSubmitting || isUploadingImage ? (

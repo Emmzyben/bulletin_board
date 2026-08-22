@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { ECOSYSTEMS, getKarmaLevel } from '@/lib/ecosystems';
 import { useTheme } from '@/lib/ThemeContext';
@@ -28,37 +28,36 @@ export default function Leaderboard() {
   const { data: posts = [], isLoading: loadingPosts } = useQuery({
     queryKey: ['leaderboardPosts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/posts?limit=200');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
   const { data: comments = [], isLoading: loadingComments } = useQuery({
     queryKey: ['leaderboardComments'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/comments?limit=500');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
   const { data: users = [], isLoading: loadingUsers } = useQuery({
     queryKey: ['leaderboardUsers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*');
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/users');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
@@ -155,20 +154,23 @@ export default function Leaderboard() {
           >
             🌐 All Ecosystems
           </button>
-          {ECOSYSTEMS.map(e => (
-            <button
-              key={e.id}
-              onClick={() => setActiveEcosystem(e.id)}
-              style={{
-                padding: '7px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', transition: '.15s',
-                background: activeEcosystem === e.id ? '#1B6EF3' : pillBg,
-                borderColor: activeEcosystem === e.id ? '#1B6EF3' : cardBorder,
-                color: activeEcosystem === e.id ? '#fff' : textSecondary,
-              }}
-            >
-              {e.icon} {e.label}
-            </button>
-          ))}
+          {ECOSYSTEMS.map(e => {
+            const EcoIcon = e.icon;
+            return (
+              <button
+                key={e.id}
+                onClick={() => setActiveEcosystem(e.id)}
+                style={{
+                  padding: '7px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', transition: '.15s',
+                  background: activeEcosystem === e.id ? '#1B6EF3' : pillBg,
+                  borderColor: activeEcosystem === e.id ? '#1B6EF3' : cardBorder,
+                  color: activeEcosystem === e.id ? '#fff' : textSecondary,
+                }}
+              >
+                <EcoIcon size={14} /> {e.label}
+              </button>
+            );
+          })}
         </div>
 
         {activeEcosystem !== 'all' && selectedEco && (

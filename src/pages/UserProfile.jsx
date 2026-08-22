@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { getEcosystem, getKarmaLevel, ECOSYSTEMS } from '@/lib/ecosystems';
 import PostCard from '../components/feed/PostCard';
-import { Loader2, ArrowLeft, Calendar, FileText, MessageSquare, ThumbsUp, Globe } from 'lucide-react';
+import { Loader2, ArrowLeft, Calendar, FileText, MessageSquare, ThumbsUp, Globe, Users, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useTheme } from '@/lib/ThemeContext';
+import { toast } from 'sonner';
+import { useAuth } from '@/lib/AuthContext';
 
 const tabs = [
   { id: 'posts', icon: FileText, label: 'Posts' },
@@ -16,27 +18,48 @@ const tabs = [
 export default function UserProfile() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { user: currentUser } = useAuth();
   const isDark = theme === 'dark';
   const params = new URLSearchParams(window.location.search);
   const authorEmail = params.get('email');
+  const isOwnProfile = currentUser?.email === authorEmail;
   const [activeTab, setActiveTab] = useState('posts');
   const [activeEcosystem, setActiveEcosystem] = useState(null);
+  const [followed, setFollowed] = useState(false);
+  const [showDots, setShowDots] = useState(false);
+  const [isProcessingFollow, setIsProcessingFollow] = useState(false);
+
+  const { data: followStatus, refetch: refetchFollowStatus } = useQuery({
+    queryKey: ['followStatus', authorEmail],
+    queryFn: async () => {
+      if (!authorEmail) return { is_following: false };
+      try {
+        const data = await api.get(`/users/${authorEmail}/follow-status`);
+        return data;
+      } catch (err) {
+        return { is_following: false };
+      }
+    },
+    enabled: !!authorEmail,
+  });
+
+  React.useEffect(() => {
+    if (followStatus) {
+      setFollowed(followStatus.is_following);
+    }
+  }, [followStatus]);
 
   const { data: profileUser = null, isLoading: loadingUser } = useQuery({
     queryKey: ['publicUser', authorEmail],
     queryFn: async () => {
       if (!authorEmail) return null;
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authorEmail)
-        .single();
-      
-      if (error) {
+      try {
+        const data = await api.get(`/users/${authorEmail}`);
+        return data;
+      } catch (error) {
         console.error('Error fetching user:', error);
         return null;
       }
-      return data;
     },
     enabled: !!authorEmail,
   });
@@ -45,14 +68,12 @@ export default function UserProfile() {
     queryKey: ['userPosts', authorEmail],
     queryFn: async () => {
       if (!authorEmail) return [];
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('author_email', authorEmail)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/posts?author_email=${authorEmail}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!authorEmail,
   });
@@ -61,14 +82,12 @@ export default function UserProfile() {
     queryKey: ['userComments', authorEmail],
     queryFn: async () => {
       if (!authorEmail) return [];
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('author_email', authorEmail)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/comments?author_email=${authorEmail}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!authorEmail,
   });
@@ -134,14 +153,89 @@ export default function UserProfile() {
               </div>
 
               <div style={{ padding: '0 28px 28px', position: 'relative' }}>
-                <div style={{
-                  width: 84, height: 84, borderRadius: 18,
-                  background: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 32, fontWeight: 800, color: '#fff',
-                  border: `4px solid ${cardBg}`, marginTop: -42, flexShrink: 0,
-                  boxShadow: '0 4px 20px rgba(124,77,255,.35)', marginBottom: 14,
-                }}>{initials}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+                  <div style={{
+                    width: 84, height: 84, borderRadius: 18,
+                    background: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 32, fontWeight: 800, color: '#fff',
+                    border: `4px solid ${cardBg}`, marginTop: -42, flexShrink: 0,
+                    boxShadow: '0 4px 20px rgba(124,77,255,.35)',
+                  }}>{initials}</div>
+                  
+                  {!isOwnProfile && (
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', position: 'relative' }}>
+                      <button
+                        onClick={() => { window.location.href = `mailto:${authorEmail}`; }}
+                      style={{ padding: '8px 18px', borderRadius: 20, border: `1px solid ${isDark ? 'rgba(255,255,255,.15)' : '#CBD5E1'}`, background: 'transparent', color: textPrimary, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      💬 Message
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (isProcessingFollow) return;
+                        setIsProcessingFollow(true);
+                        try {
+                          if (followed) {
+                            await api.delete(`/users/${authorEmail}/follow`);
+                            setFollowed(false);
+                            toast.success('Unfollowed');
+                          } else {
+                            await api.post(`/users/${authorEmail}/follow`);
+                            setFollowed(true);
+                            toast.success('Following!');
+                          }
+                          refetchFollowStatus();
+                        } catch (err) {
+                          toast.error(err.response?.data?.error || 'Failed to update follow status');
+                        } finally {
+                          setIsProcessingFollow(false);
+                        }
+                      }}
+                      disabled={isProcessingFollow}
+                      style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: followed ? (isDark ? 'rgba(27,110,243,.2)' : '#E0E7FF') : 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: followed ? (isDark ? '#fff' : '#1E40AF') : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: followed ? 'none' : '0 2px 12px rgba(27,110,243,.4)', border: followed ? `1px solid ${isDark ? 'rgba(27,110,243,.4)' : '#C7D2FE'}` : 'none', opacity: isProcessingFollow ? 0.7 : 1 }}
+                    >
+                      {followed ? '✓ Following' : '+ Follow'}
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={() => setShowDots(d => !d)}
+                        style={{ width: 38, height: 38, borderRadius: '50%', border: `1px solid ${isDark ? 'rgba(255,255,255,.15)' : '#CBD5E1'}`, background: 'transparent', color: textSecondary, fontSize: 16, cursor: 'pointer' }}
+                      >⋯</button>
+                      {showDots && (
+                        <div style={{ position: 'absolute', top: 44, right: 0, background: isDark ? '#0E1828' : '#FFFFFF', border: `1px solid ${isDark ? 'rgba(255,255,255,.1)' : '#E2E8F0'}`, borderRadius: 10, padding: '6px 0', minWidth: 160, zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,.5)' }}>
+                          {[
+                            { label: '🔗 Copy profile link', action: () => { navigator.clipboard?.writeText(window.location.href); toast.success('Link copied!'); } },
+                            { label: '🚩 Report user', action: async () => {
+                                try {
+                                  await api.post(`/users/${authorEmail}/report`);
+                                  toast.success('Report submitted');
+                                } catch (err) {
+                                  toast.error('Failed to submit report');
+                                }
+                              }
+                            },
+                            { label: '🚫 Block user', action: async () => {
+                                try {
+                                  await api.post(`/users/${authorEmail}/block`);
+                                  toast.success('User blocked');
+                                } catch (err) {
+                                  toast.error('Failed to block user');
+                                }
+                              }
+                            },
+                          ].map(item => (
+                            <button key={item.label} onClick={() => { item.action(); setShowDots(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 16px', background: 'none', border: 'none', color: textSecondary, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                              onMouseOver={e => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,.05)' : '#F1F5F9'}
+                              onMouseOut={e => e.currentTarget.style.background = 'none'}
+                            >{item.label}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  )}
+                </div>
 
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
                   <div>
@@ -186,6 +280,8 @@ export default function UserProfile() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: 12 }}>
                   {[
+                    { icon: <Users size={15} />, value: profileUser?.followers_count || 0, label: 'Followers' },
+                    { icon: <UserPlus size={15} />, value: profileUser?.following_count || 0, label: 'Following' },
                     { icon: <FileText size={15} />, value: userPosts.length, label: 'Posts' },
                     { icon: <MessageSquare size={15} />, value: userComments.length, label: 'Comments' },
                     { icon: <ThumbsUp size={15} />, value: totalUpvotes, label: 'Upvotes' },
@@ -222,7 +318,7 @@ export default function UserProfile() {
                   </span>
                 </button>
                 );
-              })}}
+              })}
             </div>
 
             {activeTab === 'posts' && (

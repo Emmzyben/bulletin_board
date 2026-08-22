@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send, MessageCircle, Activity, CheckCircle2, Search, ChevronRight, BookOpen, Mail, Rocket, Building2, Globe, Handshake, CreditCard, Lock, Zap } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 
 const S = {
   page: { background: 'linear-gradient(160deg,#071020 0%,#0B1628 35%,#0A1F1A 70%,#0D1408 100%)', minHeight: '100%', height: '100%', overflowY: 'auto', color: '#EEF4FF', fontFamily: 'Inter, sans-serif' },
@@ -51,15 +51,11 @@ export default function Support() {
     setSubmitting(true);
     
     try {
-      const { error } = await supabase.functions.invoke('send-support-email', {
-        body: {
-          to: ticketData.email,
-          subject: `[Support Ticket] ${ticketData.subject}`,
-          content: `Hi ${ticketData.name},\n\nThank you for reaching out! We received your support ticket and will respond within 4 hours.\n\nTicket Details:\nCategory: ${ticketData.category || 'General'}\nPriority: ${ticketData.priority}\nSubject: ${ticketData.subject}\n\n${ticketData.description}\n\n— Bulletin Board Support Team`,
-        }
+      await api.post('/support/ticket', {
+        to: ticketData.email,
+        subject: `[Support Ticket] ${ticketData.subject}`,
+        content: `Hi ${ticketData.name},\n\nThank you for reaching out! We received your support ticket and will respond within 4 hours.\n\nTicket Details:\nCategory: ${ticketData.category || 'General'}\nPriority: ${ticketData.priority}\nSubject: ${ticketData.subject}\n\n${ticketData.description}\n\n— Bulletin Board Support Team`,
       });
-      
-      if (error) throw error;
       
       toast.success('Ticket submitted! Check your email for confirmation.');
       setTicketData({ name: '', email: '', category: '', priority: 'normal', subject: '', description: '' });

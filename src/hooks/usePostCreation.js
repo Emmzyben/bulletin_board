@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '../api';
 import { toast } from 'sonner';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+import { pinata } from '../lib/pinata';
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export const usePostCreation = () => {
@@ -31,37 +32,15 @@ export const usePostCreation = () => {
     
     setIsUploadingImage(true);
     try {
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `posts/${fileName}`;
-
-      const { data, error: uploadError } = await supabase.storage
-        .from('assets')
-        .upload(filePath, imageFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        // Provide better error messages for common issues
-        if (uploadError.message.includes('Bucket not found')) {
-          throw new Error(
-            'Storage bucket not configured. Please create the "assets" bucket in Supabase Storage settings and make it public. ' +
-            'See setup-storage.js for automated setup.'
-          );
-        } else if (uploadError.message.includes('Unauthorized')) {
-          throw new Error('Not authorized to upload. Check storage permissions.');
-        } else if (uploadError.message.includes('413')) {
-          throw new Error('File is too large. Maximum size is 5MB.');
-        }
-        throw new Error(`Image upload failed: ${uploadError.message}`);
+      const { url } = await api.get('/upload/presigned_url');
+      const upload = await pinata.upload.public.file(imageFile).url(url);
+      
+      if (!upload.cid) {
+        throw new Error('Upload failed: No CID returned');
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('assets')
-        .getPublicUrl(filePath);
-      
-      return publicUrl;
+      const ipfsLink = await pinata.gateways.public.convert(upload.cid);
+      return ipfsLink;
     } catch (error) {
       // Re-throw with context for better debugging
       console.error('Image upload error:', {
@@ -81,19 +60,12 @@ export const usePostCreation = () => {
     setErrors({});
 
     try {
-      const { error: postError, data: insertedData } = await supabase
-        .from('posts')
-        .insert([postData])
-        .select();
-
-      if (postError) {
-        throw new Error(`Failed to create post: ${postError.message}`);
-      }
+      const insertedData = await api.post('/posts', postData);
 
       await queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast.success('Post created successfully!');
       
-      return insertedData?.[0] || null;
+      return insertedData || null;
     } catch (error) {
       console.error('Error creating post:', error);
       const errorMessage = error.message || 'Failed to create post';

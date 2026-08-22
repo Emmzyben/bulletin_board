@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Archive, CheckCheck } from 'lucide-react';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { toast } from 'sonner';
 
 export default function NotificationCenter({ userEmail }) {
@@ -12,15 +12,12 @@ export default function NotificationCenter({ userEmail }) {
     queryKey: ['notifications', userEmail],
     queryFn: async () => {
       if (!userEmail) return [];
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('recipient_email', userEmail)
-        .order('created_at', { ascending: false })
-        .limit(100);
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/notifications');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!userEmail,
     refetchInterval: 5000,
@@ -29,16 +26,12 @@ export default function NotificationCenter({ userEmail }) {
   const handleMarkAsRead = async (id) => {
     const notif = notifications.find(n => n.id === id);
     if (notif && !notif.read) {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id);
-      
-      if (error) {
+      try {
+        await api.put(`/notifications/${id}/read`);
+        queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+      } catch (error) {
         console.error('Error marking notification as read:', error);
-        return;
       }
-      queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
     }
   };
 
@@ -46,30 +39,22 @@ export default function NotificationCenter({ userEmail }) {
     const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
     if (unreadIds.length === 0) return;
 
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .in('id', unreadIds);
-    
-    if (error) {
+    try {
+      await api.put('/notifications/read-all', { ids: unreadIds });
+      queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+      toast.success('All notifications marked as read');
+    } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      return;
     }
-    queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
-    toast.success('All notifications marked as read');
   };
 
   const handleDelete = async (id) => {
-    const { error } = await supabase
-      .from('notifications')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
+    try {
+      await api.delete(`/notifications/${id}`);
+      queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+    } catch (error) {
       console.error('Error deleting notification:', error);
-      return;
     }
-    queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
   };
 
   const filteredNotifs = notifications.filter(n => {

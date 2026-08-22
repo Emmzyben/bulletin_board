@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trash2, Flag, Ban, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,13 +12,12 @@ export default function ContentModeration({ workspace }) {
   const { data: posts = [], isLoading: loadingPosts } = useQuery({
     queryKey: ['moderation-posts', workspace?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/posts?limit=100');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
@@ -26,12 +25,12 @@ export default function ContentModeration({ workspace }) {
     queryKey: ['moderation-channels', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
-      const { data, error } = await supabase
-        .from('channels')
-        .select('*')
-        .eq('workspace_id', workspace.id);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/channels?workspace_id=${workspace.id}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!workspace?.id,
   });
@@ -39,12 +38,7 @@ export default function ContentModeration({ workspace }) {
   const handleDeletePost = async (postId) => {
     if (window.confirm('Delete this post?')) {
       try {
-        const { error } = await supabase
-          .from('posts')
-          .delete()
-          .eq('id', postId);
-        
-        if (error) throw error;
+        await api.delete(`/posts/${postId}`);
         
         queryClient.invalidateQueries({ queryKey: ['moderation-posts'] });
         toast.success('Post deleted');
@@ -59,12 +53,7 @@ export default function ContentModeration({ workspace }) {
   const handleBanUser = async (userEmail) => {
     if (window.confirm(`Ban user ${userEmail}?`)) {
       try {
-        const { error } = await supabase
-          .from('users')
-          .update({ role: 'banned' })
-          .eq('email', userEmail);
-          
-        if (error) throw error;
+        await api.put(`/users/${userEmail}/ban`);
         
         queryClient.invalidateQueries({ queryKey: ['moderation-posts'] });
         toast.success('User banned');

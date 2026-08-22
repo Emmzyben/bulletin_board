@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Search, UserPlus } from 'lucide-react';
 
@@ -36,12 +36,12 @@ export default function UsersAdminTab({ currentUser }) {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/users');
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
@@ -50,14 +50,7 @@ export default function UsersAdminTab({ currentUser }) {
     setInviting(true);
     
     try {
-      // In a real Supabase setup, you'd use a service role edge function to invite users
-      // or use supabase.auth.admin.inviteUserByEmail if you have the right permissions/setup.
-      // For now, we'll simulate the invitation process.
-      const { error } = await supabase.functions.invoke('invite-user', {
-        body: { email: inviteEmail.trim(), role: inviteRole }
-      });
-
-      if (error) throw error;
+      await api.post('/users/invite', { email: inviteEmail.trim(), role: inviteRole });
 
       toast.success(`Invite sent to ${inviteEmail}`);
       setInviteEmail('');

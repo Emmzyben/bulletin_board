@@ -1,10 +1,11 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Plus, Bookmark, FileText, Building2, Compass, Newspaper, Briefcase, Flame, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Plus, Bookmark, FileText, Building2, Compass, Newspaper, Briefcase, Flame, BarChart3, Users } from 'lucide-react';
 import { ECOSYSTEMS } from '@/lib/ecosystems';
 
 const FEED_TABS = [
   { id: 'explore', label: 'Explore', icon: Compass },
+  { id: 'my_communities', label: 'My Communities', icon: Users },
   { id: 'news', label: 'News', icon: Newspaper },
   { id: 'careers', label: 'Careers', icon: Briefcase },
   { id: 'popular', label: 'Popular', icon: Flame },
@@ -12,6 +13,8 @@ const FEED_TABS = [
 ];
 
 export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosystem, setActiveEcosystem, onCreatePost, user, isDark = true }) {
+  const joinedCommunities = user?.joined_communities || [];
+  const joinedEcosystems = ECOSYSTEMS.filter(e => joinedCommunities.includes(e.id));
   const sideCard = { background: isDark ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.08)'}`, borderRadius: 10, padding: '12px 10px', marginBottom: 0 };
   const secLabel = { fontSize: 11, fontWeight: 800, color: isDark ? 'rgba(150,190,240,.65)' : '#64748B', textTransform: 'uppercase', letterSpacing: '.8px', padding: '0 6px', marginBottom: 6, display: 'block' };
   return (
@@ -64,9 +67,38 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
         </div>
       </div>
 
-      {/* Ecosystems */}
+      {/* My Communities — only joined */}
+      {joinedEcosystems.length > 0 && (
+        <div style={sideCard}>
+          <span style={secLabel}>My Communities</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {joinedEcosystems.map(e => {
+              const EcoIcon = e.icon;
+              const active = activeEcosystem === e.id;
+              return (
+                <button
+                  key={e.id}
+                  onClick={() => setActiveEcosystem(e.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px',
+                    borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13,
+                    fontWeight: active ? 600 : 500,
+                    background: active ? (isDark ? 'rgba(27,110,243,.15)' : 'rgba(27,110,243,.1)') : 'transparent',
+                    color: active ? '#4F8AF4' : (isDark ? '#7FA8D4' : '#475569'),
+                  }}
+                >
+                  <EcoIcon size={16} />
+                  {e.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* All Ecosystems */}
       <div style={sideCard}>
-        <span style={secLabel}>Ecosystems</span>
+        <span style={secLabel}>All Ecosystems</span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <button
             onClick={() => setActiveEcosystem(null)}
@@ -80,7 +112,11 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
           >
             🌐 All Ecosystems
           </button>
-          {ECOSYSTEMS.map(e => {
+          {joinedEcosystems.length === 0 ? (
+            <span style={{ display: 'block', padding: '7px 10px', color: isDark ? '#64748B' : '#94A3B8', fontSize: 12, lineHeight: 1.4 }}>
+              Join a community to see it here.
+            </span>
+          ) : joinedEcosystems.map(e => {
             const EcoIcon = e.icon;
             const active = activeEcosystem === e.id;
             return (

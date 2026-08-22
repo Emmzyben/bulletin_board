@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { Smile } from 'lucide-react';
 
@@ -15,32 +15,11 @@ export default function EmojiReactions({ postId, commentId, reactions = [], user
     const existing = reactions.find(r => r.emoji === emoji && r.users?.includes(userEmail));
     
     try {
-      if (existing) {
-        // Remove reaction
-        let query = supabase
-          .from('reactions')
-          .delete()
-          .eq('emoji', emoji)
-          .eq('user_email', userEmail);
-          
-        if (postId) query = query.eq('post_id', postId);
-        if (commentId) query = query.eq('comment_id', commentId);
-        
-        const { error } = await query;
-        if (error) throw error;
-      } else {
-        // Add reaction
-        const { error } = await supabase
-          .from('reactions')
-          .insert([{
-            emoji,
-            user_email: userEmail,
-            ...(postId && { post_id: postId }),
-            ...(commentId && { comment_id: commentId })
-          }]);
-          
-        if (error) throw error;
-      }
+      await api.post('/reactions/toggle', {
+        emoji,
+        post_id: postId,
+        comment_id: commentId
+      });
       
       queryClient.invalidateQueries({ queryKey: ['reactions', postId, commentId] });
       setShowPicker(false);

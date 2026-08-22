@@ -130,6 +130,29 @@ export const sendWorkspaceInviteEmail = async (toEmail, inviterName, workspaceNa
 };
 
 // ------------------------------------------------------------
+// SEND B2B INVITE EMAIL
+// ------------------------------------------------------------
+export const sendB2BInviteEmail = async (toEmail, inviterName, workspaceName) => {
+    const inviteUrl = `${window.location.origin}/login`;
+
+    const title = "B2B Partnership Invitation";
+    const content = `${inviterName || 'A partner'} has invited you to a B2B Space in the **${workspaceName}** workspace on Bulletin Board.
+    
+    To accept this invitation:
+    1. Click the button below to log in or create an account.
+    2. Once logged in, go to the Workspace page.
+    3. You will see a banner at the top of your screen with your pending invites. Click "Accept" there to connect your accounts.`;
+
+    const html = getHtmlTemplate(title, content, "Log in to Accept Invite", inviteUrl);
+
+    return await sendExternalEmail(
+        toEmail,
+        `B2B Invitation from ${workspaceName} - Bulletin Board`,
+        html
+    );
+};
+
+// ------------------------------------------------------------
 // SEND VERIFICATION EMAIL
 // ------------------------------------------------------------
 export const sendVerificationEmail = async (toEmail, verificationToken) => {

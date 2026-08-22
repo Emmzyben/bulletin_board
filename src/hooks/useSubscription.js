@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '../api';
 
 export function useSubscription() {
   const { data, isLoading } = useQuery({
     queryKey: ['subscription'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('check-trial-upgrade');
+        const data = await api.get('/subscription/check-trial-upgrade');
         // If the edge function isn't deployed or returns an error, fail gracefully
         if (error) {
           console.warn('Subscription check unavailable, defaulting to trial active:', error.message);

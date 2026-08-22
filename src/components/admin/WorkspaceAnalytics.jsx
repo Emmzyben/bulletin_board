@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, MessageSquare, TrendingUp, Calendar, Loader2 } from 'lucide-react';
 
@@ -9,15 +9,12 @@ export default function WorkspaceAnalytics({ workspace }) {
     queryKey: ['workspace-messages', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('workspace_id', workspace.id)
-        .order('created_at', { ascending: false })
-        .limit(500);
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/messages?workspace_id=${workspace.id}&limit=500`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!workspace?.id,
   });
@@ -26,13 +23,12 @@ export default function WorkspaceAnalytics({ workspace }) {
     queryKey: ['workspace-all-channels', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
-      const { data, error } = await supabase
-        .from('channels')
-        .select('*')
-        .eq('workspace_id', workspace.id);
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/channels?workspace_id=${workspace.id}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!workspace?.id,
   });

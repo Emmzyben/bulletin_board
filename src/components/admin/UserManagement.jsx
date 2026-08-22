@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Trash2, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,14 +15,12 @@ export default function UserManagement({ workspace }) {
     queryKey: ['workspace-users', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
-      // Assuming a simplified schema where users table has a workspace_id or there's a join
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('workspace_id', workspace.id);
-      
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/users?workspace_id=${workspace.id}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: !!workspace?.id,
   });
@@ -31,11 +29,7 @@ export default function UserManagement({ workspace }) {
     if (!inviteEmail || !workspace) return;
     setInviting(true);
     try {
-      const { error } = await supabase.functions.invoke('invite-to-workspace', {
-        body: { email: inviteEmail, role: inviteRole, workspaceId: workspace.id }
-      });
-      
-      if (error) throw error;
+      await api.post('/workspaces/invite', { email: inviteEmail, role: inviteRole, workspaceId: workspace.id });
 
       toast.success(`Invite sent to ${inviteEmail}`);
       setInviteEmail('');
@@ -52,12 +46,7 @@ export default function UserManagement({ workspace }) {
 
   const handleChangeRole = async (userId, newRole) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
-        
-      if (error) throw error;
+      await api.put(`/users/${userId}/role`, { role: newRole });
       
       queryClient.invalidateQueries({ queryKey: ['workspace-users', workspace.id] });
       toast.success('Role updated');
@@ -70,12 +59,7 @@ export default function UserManagement({ workspace }) {
   const handleDeactivateUser = async (userId) => {
     if (window.confirm('Are you sure you want to deactivate this user?')) {
       try {
-        const { error } = await supabase
-          .from('users')
-          .update({ role: 'deactivated' })
-          .eq('id', userId);
-          
-        if (error) throw error;
+        await api.put(`/users/${userId}/role`, { role: 'deactivated' });
 
         queryClient.invalidateQueries({ queryKey: ['workspace-users', workspace.id] });
         toast.success('User deactivated');

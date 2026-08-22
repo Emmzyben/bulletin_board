@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api, socket } from '../api';
 import { useEffect } from 'react';
 
 export function useNotifications(userEmail) {
@@ -9,14 +9,12 @@ export function useNotifications(userEmail) {
     queryKey: ['notifications', userEmail],
     queryFn: async () => {
       if (!userEmail) return [];
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('recipient_email', userEmail)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get('/notifications');
+        return data || [];
+      } catch (error) {
+        throw error;
+      }
     },
     enabled: !!userEmail,
     refetchInterval: 15000,
@@ -26,20 +24,21 @@ export function useNotifications(userEmail) {
   useEffect(() => {
     if (!userEmail) return;
     
-    const channel = supabase
-      .channel(`notifications:${userEmail}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'notifications',
-        filter: `recipient_email=eq.${userEmail}`
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
-      })
-      .subscribe();
+    if (!socket.connected) {
+      socket.connect();
+    }
+    
+    // Assume backend places user in a personal room for notifications
+    socket.emit('joinNotifications', userEmail);
+
+    const handleNewNotification = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+    };
+
+    socket.on('newNotification', handleNewNotification);
 
     return () => {
-      supabase.removeChannel(channel);
+      socket.off('newNotification', handleNewNotification);
     };
   }, [userEmail, queryClient]);
 
@@ -48,10 +47,7 @@ export function useNotifications(userEmail) {
   const markAsRead = async (notificationId) => {
     const notification = notifications.find(n => n.id === notificationId);
     if (notification && !notification.read) {
-      await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
+      await api.put(`/notifications/${notificationId}/read`);
       queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
     }
   };
@@ -60,10 +56,7 @@ export function useNotifications(userEmail) {
     const unreadNotifications = notifications.filter(n => !n.read);
     if (unreadNotifications.length === 0) return;
     
-    await supabase
-      .from('notifications')
-      .update({ read: true })
-      .in('id', unreadNotifications.map(n => n.id));
+    await api.put('/notifications/read-all');
       
     queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
   };

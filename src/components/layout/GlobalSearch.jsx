@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { Loader2, Cpu, Stethoscope, Building2, BookOpen, Building, Home, Hotel, Briefcase, Music, Search } from 'lucide-react';
 import { getEcosystem, getFlair } from '@/lib/ecosystems';
 import { useQuery } from '@tanstack/react-query';
@@ -43,14 +43,12 @@ export default function GlobalSearch() {
   const { data: matchedPosts = [], isFetching: fetchingPosts } = useQuery({
     queryKey: ['search-posts', trimmed],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .or(`title.ilike.%${trimmed}%,body.ilike.%${trimmed}%,author_name.ilike.%${trimmed}%`)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/search/posts?q=${encodeURIComponent(trimmed)}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: trimmed.length >= 2,
     staleTime: 30000,
@@ -59,13 +57,12 @@ export default function GlobalSearch() {
   const { data: matchedUsers = [], isFetching: fetchingUsers } = useQuery({
     queryKey: ['search-users', trimmed],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .or(`full_name.ilike.%${trimmed}%,email.ilike.%${trimmed}%`)
-        .limit(4);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/search/users?q=${encodeURIComponent(trimmed)}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
     enabled: trimmed.length >= 2,
     staleTime: 30000,

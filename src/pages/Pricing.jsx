@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Loader2, Check, X, ChevronDown, Star, Heart, Building2, Sparkles } from 'lucide-react';
@@ -128,8 +128,7 @@ export default function Pricing() {
   const handleStartTrial = async () => {
     setStartingTrial(true);
     try {
-      const { data, error } = await supabase.functions.invoke('startTrial', {});
-      if (error) throw error;
+      const data = await api.post('/subscription/start-trial', {});
       if (data.success) {
         alert(`✅ ${data.message}`);
       }

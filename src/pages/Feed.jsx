@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useOutletContext, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/lib/ThemeContext';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import PostCard from '../components/feed/PostCard';
 import NewsCard from '../components/feed/NewsCard';
 import FeedLeftSidebar from '../components/feed/FeedLeftSidebar';
@@ -16,12 +16,35 @@ export default function Feed() {
   const isDark = theme === 'dark';
   const location = useLocation();
   const isSavedView = location.pathname === '/saved';
+  const navigate = useNavigate();
+
+  // Redirect guests away from the saved-posts view
+  useEffect(() => {
+    if (isSavedView && !user) {
+      navigateToLogin();
+    }
+  }, [isSavedView, user]);
+
   const [activeTab, setActiveTab] = useState('explore');
-  const [activeEcosystem, setActiveEcosystem] = useState(null);
+  const [activeEcosystem, setActiveEcosystem] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('eco') || null;
+  });
   const [activeFlair, setActiveFlair] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [advancedFilters, setAdvancedFilters] = useState({ ecosystem: '', flair: '', sortBy: 'recent' });
   const [activeTopic, setActiveTopic] = useState(null);
+  const joinedCommunities = user?.joined_communities || [];
+
+  // On mount, if ?eco= is in URL, apply the filter then clean up the URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const eco = params.get('eco');
+    if (eco) {
+      setActiveEcosystem(eco);
+      navigate('/', { replace: true });
+    }
+  }, []);
 
   const [newPostsAvailable, setNewPostsAvailable] = useState(false);
   const [lastPostId, setLastPostId] = useState(null);
@@ -29,9 +52,12 @@ export default function Feed() {
   const { data: newsData } = useQuery({
     queryKey: ['live-news'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('fetch-news');
-      if (error) throw error;
-      return data;
+      try {
+        const data = await api.get('/news');
+        return data;
+      } catch (err) {
+        return { news: [] };
+      }
     },
     refetchInterval: 5 * 60 * 1000, // refresh every 5 min
     staleTime: 5 * 60 * 1000,
@@ -39,21 +65,10 @@ export default function Feed() {
   const newsArticles = newsData?.news || [];
 
   const { data: posts = [], isLoading, refetch } = useQuery({
-    queryKey: ['posts', !!user],
+    queryKey: ['posts'],
     queryFn: async () => {
-      if (user) {
-        const { data, error } = await supabase
-          .from('posts')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        if (error) throw error;
-        return data || [];
-      }
-      // Guests: use public backend function
-      const { data, error } = await supabase.functions.invoke('get-public-posts');
-      if (error) throw error;
-      return data?.posts || [];
+      const data = await api.get('/posts');
+      return data || [];
     },
     refetchInterval: 30000,
   });
@@ -62,11 +77,7 @@ export default function Feed() {
     queryKey: ['votes', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('votes')
-        .select('*')
-        .eq('voter_email', user.email);
-      if (error) throw error;
+      const data = await api.get('/votes');
       return data || [];
     },
     enabled: !!user?.email,
@@ -76,11 +87,7 @@ export default function Feed() {
     queryKey: ['savedPosts', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const { data, error } = await supabase
-        .from('saved_posts')
-        .select('*')
-        .eq('user_email', user.email);
-      if (error) throw error;
+      const data = await api.get('/saved-posts');
       return data || [];
     },
     enabled: !!user?.email,
@@ -106,6 +113,14 @@ export default function Feed() {
   else if (activeTab === 'careers') filteredPosts = filteredPosts.filter(p => p.flair === 'job' || p.ecosystem === 'careers');
   else if (activeTab === 'popular') filteredPosts.sort((a, b) => (b.vote_score || 0) - (a.vote_score || 0));
   else if (activeTab === 'polls') filteredPosts = filteredPosts.filter(p => p.flair === 'poll');
+  else if (activeTab === 'my_communities') {
+    const joinedCommunities = user?.joined_communities || [];
+    if (joinedCommunities.length > 0) {
+      filteredPosts = filteredPosts.filter(p => joinedCommunities.includes(p.ecosystem));
+    } else {
+      filteredPosts = []; // no communities joined yet
+    }
+  }
 
   // Advanced filters
   if (advancedFilters.ecosystem) filteredPosts = filteredPosts.filter(p => p.ecosystem === advancedFilters.ecosystem);

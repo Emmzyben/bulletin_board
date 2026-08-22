@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { format } from 'date-fns';
-import { Loader2, CornerDownRight } from 'lucide-react';
+import { Loader2, CornerDownRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 /** @type {any} */
@@ -50,9 +50,10 @@ function CommentInput({ placeholder, onSubmit, submitting, autoFocus = false }) 
   );
 }
 
-function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply, submittingId }) {
+function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply, onDelete, submittingId }) {
   const navigate = useNavigate();
   const [showReply, setShowReply] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const MAX_DEPTH = 4;
   const indent = Math.min(depth, MAX_DEPTH) * 16;
 
@@ -68,10 +69,13 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
         <div className="flex-1 min-w-0">
           {/* Avatar + content */}
           <div className="flex gap-2">
-            <UI.Avatar className="h-6 w-6 flex-shrink-0 mt-0.5">
-              <UI.AvatarFallback className="text-xs bg-slate-700 text-slate-300">
-                {(comment.author_name || 'A').slice(0, 2).toUpperCase()}
-              </UI.AvatarFallback>
+            <UI.Avatar className="h-7 w-7 flex-shrink-0 mt-0.5" style={{ overflow: 'hidden' }}>
+              {comment.author_avatar_url
+                ? <img src={comment.author_avatar_url} alt={comment.author_name || 'avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <UI.AvatarFallback className="text-xs bg-slate-700 text-slate-300">
+                    {(comment.author_name || 'A').slice(0, 2).toUpperCase()}
+                  </UI.AvatarFallback>
+              }
             </UI.Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -87,17 +91,31 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
               </div>
               <p className="text-sm text-slate-300 mt-0.5 leading-relaxed">{comment.body}</p>
 
-              {/* Reply button */}
-              <button
-                onClick={() => setShowReply(r => !r)}
-                className="flex items-center gap-1 text-xs text-slate-500 hover:text-primary mt-1.5 transition-colors"
-              >
-                <CornerDownRight className="w-3 h-3" />
-                {showReply ? 'Cancel' : 'Reply'}
-                {comment.children?.length > 0 && (
-                  <span className="ml-1 text-slate-600">· {comment.children.length} {comment.children.length === 1 ? 'reply' : 'replies'}</span>
+              {/* Actions row: Reply + Delete */}
+              <div className="flex items-center gap-3 mt-1.5">
+                <button
+                  onClick={() => setShowReply(r => !r)}
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-primary transition-colors"
+                >
+                  <CornerDownRight className="w-3 h-3" />
+                  {showReply ? 'Cancel' : 'Reply'}
+                  {comment.children?.length > 0 && (
+                    <span className="ml-1 text-slate-600">· {comment.children.length} {comment.children.length === 1 ? 'reply' : 'replies'}</span>
+                  )}
+                </button>
+
+                {comment.author_email === userEmail && (
+                  <button
+                    onClick={() => onDelete(comment.id)}
+                    disabled={deleting}
+                    className="flex items-center gap-1 text-xs text-slate-600 hover:text-red-400 transition-colors disabled:opacity-50"
+                    title="Delete comment"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    {deleting ? 'Deleting…' : 'Delete'}
+                  </button>
                 )}
-              </button>
+              </div>
 
               {/* Inline reply box */}
               {showReply && (
@@ -128,6 +146,7 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
                   userEmail={userEmail}
                   userName={userName}
                   onSubmitReply={onSubmitReply}
+                  onDelete={onDelete}
                   submittingId={submittingId}
                 />
               ))}
@@ -146,108 +165,44 @@ export default function CommentSection({ post, userEmail, userName }) {
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ['comments', post.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('comments')
-        .select('*')
-        .eq('post_id', post.id)
-        .order('created_at', { ascending: true });
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/comments?post_id=${post.id}`);
+        return data || [];
+      } catch (err) {
+        return [];
+      }
     },
   });
 
   const submitComment = async (body, parentId = null) => {
     if (!body.trim()) return;
     const trimmedBody = body.trim();
-    setSubmittingId(parentId || 'top');
-
-    const { data: newComment, error: commentError } = await supabase
-      .from('comments')
-      .insert({
+    try {
+      await api.post('/comments', {
         post_id: post.id,
         parent_id: parentId || null,
-        author_email: userEmail,
-        author_name: userName || 'Anonymous',
         body: trimmedBody,
-      })
-      .select()
-      .single();
-
-    if (commentError) {
+      });
+    } catch (err) {
       toast.error('Failed to post comment');
       setSubmittingId(null);
       return;
     }
 
-    // Only increment count for top-level comments
-    if (!parentId) {
-      await supabase
-        .from('posts')
-        .update({ comment_count: (post.comment_count || 0) + 1 })
-        .eq('id', post.id);
-    }
-
-    // Notify post author on new top-level comment
-    if (!parentId && post.author_email && post.author_email !== userEmail) {
-      await supabase.from('notifications').insert({
-        recipient_email: post.author_email,
-        type: 'mention',
-        sender_email: userEmail,
-        sender_name: userName || userEmail?.split('@')[0],
-        title: 'New comment on your post',
-        message: `${userName || 'Someone'} commented: "${trimmedBody.slice(0, 80)}"`,
-        post_id: post.id,
-        read: false,
-      });
-    }
-
-    // Notify parent comment author on reply
-    if (parentId) {
-      const parent = comments.find(c => c.id === parentId);
-      if (parent?.author_email && parent.author_email !== userEmail) {
-        await supabase.from('notifications').insert({
-          recipient_email: parent.author_email,
-          type: 'mention',
-          sender_email: userEmail,
-          sender_name: userName || userEmail?.split('@')[0],
-          title: '↩️ Someone replied to your comment',
-          message: `${userName || 'Someone'} replied: "${trimmedBody.slice(0, 80)}"`,
-          post_id: post.id,
-          read: false,
-        });
-      }
-    }
-
-    // Detect @mentions
-    const mentionMatches = trimmedBody.match(/@(\S+)/g);
-    if (mentionMatches) {
-      const mentionedHandles = [...new Set(mentionMatches.map(m => m.slice(1).toLowerCase()))];
-      const { data: allUsers } = await supabase.from('users').select('email, primary_ecosystem'); // Simplified select
-      
-      if (allUsers) {
-        for (const handle of mentionedHandles) {
-          const mentioned = allUsers.find(u =>
-            u.email?.split('@')[0].toLowerCase() === handle
-          );
-          if (mentioned && mentioned.email !== userEmail) {
-            await supabase.from('notifications').insert({
-              recipient_email: mentioned.email,
-              type: 'mention',
-              sender_email: userEmail,
-              sender_name: userName || userEmail?.split('@')[0],
-              title: '🏷️ You were mentioned',
-              message: `${userName || 'Someone'} mentioned you: "${trimmedBody.slice(0, 80)}"`,
-              post_id: post.id,
-              read: false,
-            });
-          }
-        }
-      }
-    }
-
     setSubmittingId(null);
     queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
     queryClient.invalidateQueries({ queryKey: ['posts'] });
+  };
+
+  const deleteComment = async (commentId) => {
+    try {
+      await api.delete(`/comments/${commentId}`);
+      toast.success('Comment deleted');
+      queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    } catch (err) {
+      toast.error('Failed to delete comment');
+    }
   };
 
   const tree = buildTree(comments);
@@ -280,6 +235,7 @@ export default function CommentSection({ post, userEmail, userName }) {
               userEmail={userEmail}
               userName={userName}
               onSubmitReply={submitComment}
+              onDelete={deleteComment}
               submittingId={submittingId}
             />
           ))}

@@ -5,9 +5,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { usePresence } from '@/hooks/usePresence';
 import { useTyping } from '@/hooks/useTyping';
 import { Loader2, Bold, Italic, Strikethrough, Link, AtSign, Clock, Smile, Image, Paperclip, Mic } from 'lucide-react';
-import { supabase } from '@/api/supabaseClient';
+import { api, socket } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
+import { pinata } from '@/lib/pinata';
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉', '🔥', '👏'];
 
@@ -126,18 +127,15 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
     queryKey: ['messages', channelId || activeDm],
     queryFn: async () => {
       if (!channelId && !activeDm) return [];
-      let query = supabase.from('messages').select('*').eq('workspace_id', workspaceId);
-      
-      if (channelId) {
-        query = query.eq('channel_id', channelId);
-      } else if (activeDm) {
-        query = query.eq('is_dm', true)
-          .or(`and(sender_email.eq.${user?.email},dm_recipient.eq.${activeDm}),and(sender_email.eq.${activeDm},dm_recipient.eq.${user?.email})`);
+      try {
+        let url = `/messages?workspace_id=${workspaceId}`;
+        if (channelId) url += `&channel_id=${channelId}`;
+        if (activeDm) url += `&active_dm=${activeDm}`;
+        const data = await api.get(url);
+        return data || [];
+      } catch (err) {
+        return [];
       }
-
-      const { data, error } = await query.order('created_at', { ascending: true }).limit(100);
-      if (error) throw error;
-      return data || [];
     },
     enabled: !!(channelId || activeDm),
   });
@@ -147,34 +145,20 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
     const roomId = channelId ? `room_${channelId}` : activeDm ? `dm_${user?.email}_${activeDm}` : null;
     if (!roomId) return;
     
-    const filterStr = channelId ? `channel_id=eq.${channelId}` : `workspace_id=eq.${workspaceId}`; 
+    const handleUpdate = () => {
+      if (activeDm) {
+        queryClient.invalidateQueries({ queryKey: ['messages', activeDm] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+      }
+    };
 
-    const messageSub = supabase
-      .channel(roomId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: filterStr }, (payload) => {
-        if (activeDm) {
-          const msg = payload.new;
-          if (msg.is_dm && ((msg.sender_email === user?.email && msg.dm_recipient === activeDm) || (msg.sender_email === activeDm && msg.dm_recipient === user?.email))) {
-            queryClient.invalidateQueries({ queryKey: ['messages', activeDm] });
-          }
-        } else {
-          queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
-        }
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: filterStr }, (payload) => {
-        if (activeDm) {
-          const msg = payload.new;
-          if (msg.is_dm && ((msg.sender_email === user?.email && msg.dm_recipient === activeDm) || (msg.sender_email === activeDm && msg.dm_recipient === user?.email))) {
-            queryClient.invalidateQueries({ queryKey: ['messages', activeDm] });
-          }
-        } else {
-          queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
-        }
-      })
-      .subscribe();
+    socket.on(`${roomId}_message`, handleUpdate);
+    socket.on(`${roomId}_message_update`, handleUpdate);
 
     return () => {
-      supabase.removeChannel(messageSub);
+      socket.off(`${roomId}_message`, handleUpdate);
+      socket.off(`${roomId}_message_update`, handleUpdate);
     };
   }, [channelId, activeDm, workspaceId, user?.email, queryClient]);
 
@@ -205,23 +189,22 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image uploads are allowed.');
+      return;
+    }
     
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `uploads/${fileName}`;
+      const { url } = await api.get('/upload/presigned_url');
+      const upload = await pinata.upload.public.file(file).url(url);
+      
+      if (!upload.cid) {
+        throw new Error('Upload failed: No CID returned');
+      }
 
-      const { data, error: uploadError } = await supabase.storage
-        .from('assets')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('assets')
-        .getPublicUrl(filePath);
-
+      const publicUrl = await pinata.gateways.public.convert(upload.cid);
       setAttachedFile({ name: file.name, url: publicUrl, size: file.size });
     } catch (error) {
       console.error('Failed to upload file:', error);
@@ -256,11 +239,8 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
           payload.dm_recipient = activeDm;
       }
 
-      const { error } = await supabase
-        .from('messages')
-        .insert(payload);
+      await api.post('/messages', payload);
 
-      if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['messages', channelId || activeDm] });
     } catch (error) {
       setNewMessage(messageText);
@@ -334,8 +314,12 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
     } else {
       reactions.push({ emoji, users: [user?.email] });
     }
-    await supabase.from('messages').update({ reactions }).eq('id', msg.id);
-    queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+    try {
+      await api.put(`/messages/${msg.id}/reactions`, { reactions });
+      queryClient.invalidateQueries({ queryKey: ['messages', channelId] });
+    } catch (error) {
+      console.error('Error updating reaction:', error);
+    }
   };
 
   if (!channelId) {
@@ -499,7 +483,7 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
             }}
             style={{
               display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px',
-              borderRadius: 20, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              borderRadius: 20, fontSize: 13, fontWeight: 700, cursor: 'pointer',
               background: !proFeatureAvailable ? 'rgba(255,152,0,.1)' : huddleActive ? 'linear-gradient(135deg,#00C853,#009C42)' : 'rgba(0,200,83,.1)',
               color: !proFeatureAvailable ? '#FF8F00' : huddleActive ? '#fff' : '#00C853',
               border: !proFeatureAvailable ? '1px solid rgba(255,152,0,.3)' : huddleActive ? 'none' : '1px solid rgba(0,200,83,.25)',

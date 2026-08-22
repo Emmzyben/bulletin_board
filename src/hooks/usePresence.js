@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/api/supabaseClient';
+import { api, socket } from '../api';
 
 /**
  * Manages online presence for a user in a workspace.
@@ -16,16 +16,16 @@ export function usePresence({ user, workspaceId, channelId }) {
     if (!user?.email || !workspaceId) return;
     const now = new Date().toISOString();
     
-    const { error } = await supabase.from('presence').upsert({
-      user_email: user.email,
-      workspace_id: workspaceId,
-      user_name: user.full_name || user.email || user.user_metadata?.full_name,
-      status,
-      last_seen: now,
-      channel_id: channelId || null,
-    }, { onConflict: 'user_email, workspace_id' });
-
-    if (error) console.error('Presence upsert failed:', error);
+    try {
+      await api.post('/presence', {
+        workspace_id: workspaceId,
+        status,
+        channel_id: channelId || null,
+      });
+      queryClient.invalidateQueries({ queryKey: ['presence', workspaceId] });
+    } catch (error) {
+      console.error('Presence upsert failed:', error);
+    }
     
     queryClient.invalidateQueries({ queryKey: ['presence', workspaceId] });
   }, [user?.email, user?.full_name, workspaceId, channelId, queryClient]);
@@ -36,20 +36,11 @@ export function usePresence({ user, workspaceId, channelId }) {
     const now = new Date().toISOString();
     
     try {
-      // Fetch current last_read map
-      const { data: recs } = await supabase
-        .from('presence')
-        .select('last_read')
-        .eq('user_email', user.email)
-        .eq('workspace_id', workspaceId);
-      
-      const current = recs?.[0]?.last_read || {};
-      
-      const { error } = await supabase.from('presence').update({
-        last_read: { ...current, [cid]: now },
-      }).eq('user_email', user.email).eq('workspace_id', workspaceId);
-      
-      if (error) console.error('Failed to mark channel read:', error);
+      // Note: Assuming a backend endpoint is implemented for this
+      await api.put(`/presence/last_read`, {
+        workspace_id: workspaceId,
+        channel_id: cid,
+      });
     } catch (err) {
       console.error('Error marking channel read:', err);
     }
@@ -70,14 +61,8 @@ export function usePresence({ user, workspaceId, channelId }) {
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
-      // Mark offline - fire and forget with proper error handling
-      supabase.from('presence').update({ 
-        status: 'offline', 
-        last_seen: new Date().toISOString() 
-      }).eq('user_email', user.email).eq('workspace_id', workspaceId).then(
-        () => {},
-        () => {}  // Silently ignore errors in cleanup
-      );
+      // Mark offline
+      api.post('/presence/offline', { workspace_id: workspaceId }).catch(() => {});
     };
   }, [user?.email, workspaceId, upsertPresence]);
 
@@ -93,37 +78,38 @@ export function usePresence({ user, workspaceId, channelId }) {
     queryKey: ['presence', workspaceId],
     queryFn: async () => {
       if (!workspaceId) return [];
-      const { data, error } = await supabase
-        .from('presence')
-        .select('*')
-        .eq('workspace_id', workspaceId);
-      if (error) throw error;
-      return data || [];
+      try {
+        const data = await api.get(`/presence/${workspaceId}`);
+        return data || [];
+      } catch (error) {
+        throw error;
+      }
     },
     enabled: !!workspaceId,
     refetchInterval: 15000,
   });
 
-  // Real-time subscription using Supabase Channels
+  // Real-time subscription using socket.io
   useEffect(() => {
     if (!workspaceId) return;
     
-    // Generate a unique channel name for this hook instance
-    const channelId = `presence:${workspaceId}:${Math.random().toString(36).substring(7)}`;
-    const channel = supabase
-      .channel(channelId)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'presence',
-        filter: `workspace_id=eq.${workspaceId}` 
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['presence', workspaceId] });
-      })
-      .subscribe();
+    // Connect socket if not already
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    // Join workspace room
+    socket.emit('joinWorkspace', workspaceId);
+
+    const handlePresenceUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['presence', workspaceId] });
+    };
+
+    socket.on('presenceUpdate', handlePresenceUpdate);
 
     return () => {
-      supabase.removeChannel(channel);
+      socket.off('presenceUpdate', handlePresenceUpdate);
+      socket.emit('leaveWorkspace', workspaceId);
     };
   }, [workspaceId, queryClient]);
 

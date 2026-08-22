@@ -14,7 +14,8 @@ export default function TopNav({ user, onCreatePost, onMobileMenuToggle, mobileM
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { logout, navigateToLogin } = useAuth();
-  const initials = user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
+  const displayName = user?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'U';
   const isDark = theme === 'dark';
 
   const navLinks = [
@@ -119,17 +120,20 @@ export default function TopNav({ user, onCreatePost, onMobileMenuToggle, mobileM
             <DropdownMenuTrigger asChild>
               <button style={{
                 width: 32, height: 32, borderRadius: '50%',
-                background: '#1B6EF3',
+                background: user.avatar_url ? 'transparent' : '#1B6EF3',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer',
                 border: '2px solid #FFFFFF',
+                overflow: 'hidden', padding: 0, flexShrink: 0,
               }}>
-                {initials}
+                {user.avatar_url
+                  ? <img src={user.avatar_url} alt={user.full_name || 'avatar'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : initials}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56" style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10 }}>
               <div style={{ padding: '12px 16px' }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#1F3A5F' }}>{user?.full_name || 'User'}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#1F3A5F' }}>{displayName}</p>
                 <p style={{ fontSize: 12, color: '#64748B' }}>{user?.email}</p>
               </div>
               <DropdownMenuSeparator style={{ background: '#E2E8F0' }} />

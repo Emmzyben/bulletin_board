@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { ECOSYSTEMS } from '@/lib/ecosystems';
 import { Check, ArrowRight, Users, Plug, Sparkles } from 'lucide-react';
@@ -37,49 +37,20 @@ export default function Onboarding() {
     
     try {
       // Update user metadata or profiles table
-      const { error: profileError } = await supabase
-        .from('users')
-        .update({
-          primary_ecosystem: selectedEco,
-          onboarded: true,
-        })
-        .eq('email', user.email);
-
-      if (profileError) throw profileError;
+      await api.put('/users/profile', {
+        primary_ecosystem: selectedEco,
+        onboarded: true,
+      });
 
       if (workspaceChoice === 'create' && wsName) {
-        // Create workspace
-        const { data: ws, error: wsError } = await supabase
-          .from('workspaces')
-          .insert({
-            name: wsName,
-            ecosystem: selectedEco,
-            owner_email: user.email,
-            member_count: 1,
-            plan: 'free',
-            members: [{ email: user.email, role: 'owner', status: 'active' }],
-          })
-          .select()
-          .single();
-
-        if (wsError) throw wsError;
-
-        // Create default channels
-        const { error: channelError } = await supabase
-          .from('channels')
-          .insert([
-            { name: 'announcements', workspace_id: ws.id, type: 'public' },
-            { name: 'general', workspace_id: ws.id, type: 'public' },
-            { name: 'random', workspace_id: ws.id, type: 'public' },
-          ]);
-
-        if (channelError) throw channelError;
-
-        // Link user to workspace
-        await supabase
-          .from('users')
-          .update({ workspace_id: ws.id })
-          .eq('email', user.email);
+        await api.post('/workspaces', {
+          name: wsName,
+          ecosystem: selectedEco,
+          owner_email: user.email,
+          member_count: 1,
+          plan: 'free',
+          members: [{ email: user.email, role: 'owner', status: 'active' }],
+        });
       }
 
       await checkUserAuth(); // Refresh local user state

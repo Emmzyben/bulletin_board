@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { supabase } from '@/api/supabaseClient';
+import { api } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { Heart, MessageCircle, Bookmark } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Heart, MessageCircle, Bookmark, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PostCardMobile({ post, userEmail, isGuest = false }) {
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const queryClient = useQueryClient();
+  const authorName = post.author?.full_name || post.author_name || 'Anonymous';
+  const authorAvatar = post.author?.avatar_url || post.author_avatar_url || null;
 
   const handleVote = async (voteType) => {
     if (isGuest || !userEmail) {
@@ -17,26 +20,7 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
     
     try {
       // Basic vote logic for mobile card
-      const { error: voteError } = await supabase
-        .from('votes')
-        .upsert({ 
-          post_id: post.id, 
-          voter_email: userEmail, 
-          vote_type: voteType 
-        }, { onConflict: 'post_id,voter_email' });
-
-      if (voteError) throw voteError;
-
-      // Update post counts (simplified for demo/mobile)
-      const { error: postError } = await supabase
-        .from('posts')
-        .update({ 
-          upvotes: (post.upvotes || 0) + (voteType === 'up' ? 1 : 0),
-          vote_score: (post.vote_score || 0) + (voteType === 'up' ? 1 : -1)
-        })
-        .eq('id', post.id);
-
-      if (postError) throw postError;
+      await api.put(`/posts/${post.id}/vote`, { vote_type: voteType });
 
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       toast.success('Vote recorded');
@@ -60,15 +44,19 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'max(10px, 2vw)', marginBottom: 'max(10px, 2vh)' }}>
         <div style={{
           width: 'max(36px, 8vw)', height: 'max(36px, 8vw)', minWidth: 'max(36px, 8vw)',
-          borderRadius: 8, background: 'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
+          borderRadius: 9999, overflow: 'hidden', background: authorAvatar ? 'transparent' : 'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 'clamp(11px, 3vw, 14px)', fontWeight: 800, color: '#fff',
         }}>
-          {post.author_name?.[0] || 'U'}
+          {authorAvatar ? (
+            <img src={authorAvatar} alt={authorName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span>{authorName.slice(0, 2).toUpperCase()}</span>
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 'clamp(13px, 3.5vw, 15px)', fontWeight: 700, color: '#EEF4FF', marginBottom: 2 }}>
-            {post.author_name}
+            {authorName}
           </div>
           <div style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', color: '#6B93C4' }}>
             {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Just now'}
@@ -131,9 +119,10 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
         color: '#6B93C4', marginBottom: 'max(10px, 2vh)', paddingBottom: 'max(10px, 1.5vh)',
         borderBottom: '1px solid rgba(255,255,255,.05)',
       }}>
-        <span>👍 {post.upvotes || 0}</span>
-        <span>💬 {post.comment_count || 0}</span>
-        <span>� {post.saves_count || 0}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ThumbsUp style={{ width: 14, height: 14 }} />{post.upvotes || 0}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ThumbsDown style={{ width: 14, height: 14 }} />{post.downvotes || 0}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>💬 {post.comment_count || 0}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>🔖 {post.saves_count || 0}</span>
       </div>
 
       {/* Actions - Touch-friendly buttons */}

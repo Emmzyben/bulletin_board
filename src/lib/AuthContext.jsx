@@ -1,99 +1,90 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase } from '@/api/supabaseClient';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api, socket } from '../api';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
-  // Helper to extract full_name from Supabase user metadata
-  const formatUser = (u) => {
-    if (!u) return null;
-    return {
-      ...u,
-      full_name: u.user_metadata?.full_name || u.raw_user_meta_data?.full_name || u.full_name
-    };
+  const checkUserAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const userData = await api.get('/auth/me');
+        setUser(userData);
+        socket.auth = { token };
+        socket.connect();
+      } catch (error) {
+        localStorage.removeItem('token');
+        setUser(null);
+        socket.disconnect();
+      }
+    } else {
+      setUser(null);
+    }
+    setIsLoadingAuth(false);
+    setAuthChecked(true);
   };
 
   useEffect(() => {
-    // Check initial session
-    const initSession = async () => {
-      setIsLoadingAuth(true);
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Initial session check failed:', error);
-        setAuthError(error);
-      } else if (session) {
-        setUser(formatUser(session.user));
-        setIsAuthenticated(true);
-      }
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    };
-
-    initSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setUser(formatUser(session.user));
-        setIsAuthenticated(true);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    checkUserAuth();
   }, []);
 
-  const logout = async () => {
-    setIsLoadingAuth(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Logout failed:', error);
-      setAuthError(error);
-    } else {
-      setUser(null);
-      setIsAuthenticated(false);
-    }
-    setIsLoadingAuth(false);
+  const signUp = async (email, password, additionalData) => {
+    const response = await api.post('/auth/signup', { email, password, ...additionalData });
+    localStorage.setItem('token', response.token);
+    setUser(response.user);
+    socket.auth = { token: response.token };
+    socket.connect();
+    return response;
+  };
+
+  const signIn = async (email, password) => {
+    const response = await api.post('/auth/login', { email, password });
+    localStorage.setItem('token', response.token);
+    setUser(response.user);
+    socket.auth = { token: response.token };
+    socket.connect();
+    return response;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    socket.disconnect();
   };
 
   const navigateToLogin = () => {
     window.location.href = '/login';
   };
 
-  const checkUserAuth = async () => {
-    const { data: { user: sbUser }, error } = await supabase.auth.getUser();
-    if (sbUser) {
-      setUser(formatUser(sbUser));
-      setIsAuthenticated(true);
-    } else {
-      setUser(null);
-      setIsAuthenticated(false);
+  const refreshUser = async () => {
+    try {
+      const userData = await api.get('/auth/me');
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
     }
-    return sbUser;
   };
 
+  const isAuthenticated = !!user;
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
       isLoadingAuth,
       authError,
       authChecked,
       logout,
       navigateToLogin,
       checkUserAuth,
+      signUp,
+      signIn,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

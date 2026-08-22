@@ -4,7 +4,7 @@ import { Hash, Lock, ChevronRight, Settings, Clock, MoreHorizontal } from 'lucid
 import { useQueryClient } from '@tanstack/react-query';
 import { getEcosystem } from '@/lib/ecosystems';
 import { usePresence } from '@/hooks/usePresence';
-import { supabase } from '@/api/supabaseClient';
+import { api, socket } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 
@@ -26,28 +26,32 @@ export default function WorkspaceSidebar({
   const eco = workspace ? getEcosystem(workspace.ecosystem) : null;
   const isOwner = user?.email === workspace?.owner_email;
 
+  const rawMembers = workspace?.members;
+  const members = Array.isArray(rawMembers)
+    ? rawMembers
+    : typeof rawMembers === 'string'
+      ? (() => { try { return JSON.parse(rawMembers); } catch { return []; } })()
+      : [];
+
   // Active vs pending B2B spaces
   const activeB2BSpaces = b2bSpaces.filter(s => s.status === 'active');
   const pendingB2BSpaces = b2bSpaces.filter(s => s.status === 'pending');
 
   const handleCreateChannel = async () => {
     if (!newChannelName || !workspace) return;
-    const { error } = await supabase
-      .from('channels')
-      .insert({
+    try {
+      await api.post('/channels', {
         name: newChannelName,
         workspace_id: workspace.id,
         type: newChannelType,
       });
-    
-    if (error) {
+      queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
+      setShowNewChannel(false);
+      setNewChannelName('');
+    } catch (error) {
       console.error('Error creating channel:', error);
       toast.error('Failed to create channel');
-      return;
     }
-    queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
-    setShowNewChannel(false);
-    setNewChannelName('');
   };
 
   const handleRenameChannel = async (ch) => {
@@ -55,42 +59,37 @@ export default function WorkspaceSidebar({
       setEditingChannel(null);
       return;
     }
-    const { error } = await supabase
-      .from('channels')
-      .update({ name: editChannelName.trim().toLowerCase().replace(/\s+/g, '-') })
-      .eq('id', ch.id);
-    if (error) {
-      toast.error('Failed to rename channel');
-    } else {
+    try {
+      await api.put(`/channels/${ch.id}`, { name: editChannelName.trim().toLowerCase().replace(/\s+/g, '-') });
       queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
+    } catch (error) {
+      toast.error('Failed to rename channel');
     }
     setEditingChannel(null);
   };
 
   const handleDeleteChannel = async (ch) => {
     if (!window.confirm(`Delete #${ch.name}? This cannot be undone.`)) return;
-    const { error } = await supabase.from('channels').delete().eq('id', ch.id);
-    if (error) {
-      toast.error('Failed to delete channel');
-    } else {
+    try {
+      await api.delete(`/channels/${ch.id}`);
       if (activeChannelId === ch.id) setActiveChannelId(null);
       queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
       toast.success(`#${ch.name} deleted`);
+    } catch (error) {
+      toast.error('Failed to delete channel');
     }
   };
 
   // Real-time subscription for channel updates
   useEffect(() => {
     if (!workspace?.id) return;
-    const channelSub = supabase
-      .channel(`sidebar_${workspace.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'channels', filter: `workspace_id=eq.${workspace.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
-      })
-      .subscribe();
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
+    };
+    socket.on(`channel_update_${workspace.id}`, handleUpdate);
     
     return () => {
-      supabase.removeChannel(channelSub);
+      socket.off(`channel_update_${workspace.id}`, handleUpdate);
     };
   }, [workspace?.id, queryClient]);
 
@@ -111,8 +110,6 @@ export default function WorkspaceSidebar({
   const onlineCount = onlineMembers.length;
 
   const allRegularChannels = channels.filter(c => c.type !== 'b2b');
-
-  const members = workspace?.members || [];
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden" style={{ background: '#0B1628' }}>
@@ -283,7 +280,17 @@ export default function WorkspaceSidebar({
                   <ChevronRight style={{ width: 12, height: 12, color: '#6B93C4', transform: isOpen ? 'rotate(90deg)' : 'none', transition: '.2s' }} />
                 </button>
                 {isOpen && space.shared_channels?.map((chName, i) => (
-                  <button key={i} style={{
+                  <button key={i} 
+                  onClick={() => {
+                    const b2bChannel = channels.find(c => c.name === chName && c.type === 'b2b' && c.workspace_id === space.workspace_id);
+                    if (b2bChannel) {
+                      setActiveChannelId(b2bChannel.id);
+                      setActiveDm(null);
+                    } else {
+                      toast.error('Channel not found or not accessible');
+                    }
+                  }}
+                  style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     padding: '6px 14px 6px 22px', cursor: 'pointer',
                     fontSize: 13, fontWeight: 500, color: '#7FA8D4',
@@ -325,10 +332,11 @@ export default function WorkspaceSidebar({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 5px', fontSize: 11, fontWeight: 800, color: 'rgba(150,190,240,.65)', textTransform: 'uppercase', letterSpacing: '.8px' }}>
           <span>Direct Messages</span>
         </div>
-        {!workspace?.members || workspace.members.length === 1 ? (
-          <div style={{ fontSize: 12, color: 'rgba(150,190,240,.35)', padding: '2px 16px 8px' }}>No other members</div>
-        ) : (
-          workspace.members.filter(m => m.email !== user?.email).map(m => {
+        {(() => {
+          if (members.length <= 1) {
+            return <div style={{ fontSize: 12, color: 'rgba(150,190,240,.35)', padding: '2px 16px 8px' }}>No other members</div>;
+          }
+          return members.filter(m => m.email !== user?.email).map(m => {
             const isOnline = onlineEmails.has(m.email);
             const statusColor = isOnline ? '#00C853' : '#4B5563';
             const isActive = activeDm === m.email;
@@ -364,7 +372,7 @@ export default function WorkspaceSidebar({
               </div>
             </button>
           )})
-        )}
+        })()}
       </div>
 
       {/* User status bar */}

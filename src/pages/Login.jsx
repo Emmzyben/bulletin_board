@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '@/api/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,35 +14,24 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { signIn } = useAuth();
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) {
-      toast.error(error.message || 'Failed to sign in');
-    } else {
+    try {
+      await signIn(email, password);
       toast.success('Welcome back!');
       navigate('/');
+    } catch (error) {
+      toast.error(error.message || 'Failed to sign in');
     }
     setLoading(false);
   };
 
   const handleOAuthLogin = async (provider) => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-
-    if (error) {
-      toast.error(`Failed to sign in with ${provider}`);
-    }
+    toast.error(`OAuth login not implemented for ${provider} in Express backend yet.`);
   };
 
   return (
