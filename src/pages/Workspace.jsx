@@ -141,7 +141,6 @@ export default function Workspace() {
       await api.post('/workspaces', {
         name: newWsName,
         ecosystem: newWsEco,
-        owner_email: user?.email,
         member_count: 1,
         plan: 'free',
         members: [{ email: user?.email, role: 'owner', status: 'active' }],
