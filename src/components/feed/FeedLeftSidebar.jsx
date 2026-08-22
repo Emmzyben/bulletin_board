@@ -112,11 +112,7 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
           >
             🌐 All Ecosystems
           </button>
-          {joinedEcosystems.length === 0 ? (
-            <span style={{ display: 'block', padding: '7px 10px', color: isDark ? '#64748B' : '#94A3B8', fontSize: 12, lineHeight: 1.4 }}>
-              Join a community to see it here.
-            </span>
-          ) : joinedEcosystems.map(e => {
+          {ECOSYSTEMS.map(e => {
             const EcoIcon = e.icon;
             const active = activeEcosystem === e.id;
             return (

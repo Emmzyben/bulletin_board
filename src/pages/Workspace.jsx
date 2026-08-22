@@ -13,6 +13,7 @@ import { Building2, Loader2, LogIn, CheckCircle2 } from 'lucide-react';
 import { ECOSYSTEMS } from '@/lib/ecosystems';
 import { toast } from 'sonner';
 import { sendWorkspaceInviteEmail, sendB2BInviteEmail } from '@/hooks/email';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Workspace() {
   const { user, navigateToLogin } = useAuth();
@@ -27,6 +28,7 @@ export default function Workspace() {
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [newWsName, setNewWsName] = useState('');
   const [newWsEco, setNewWsEco] = useState('');
+  const isMobile = useIsMobile();
 
   const { data: allWorkspaces = [], isLoading: loadingWs } = useQuery({
     queryKey: ['workspaces', user?.email],
@@ -124,10 +126,10 @@ export default function Workspace() {
   }, [workspace?.id, user?.email, queryClient]);
 
   useEffect(() => {
-    if (channels.length > 0 && !activeChannelId) {
+    if (!isMobile && channels.length > 0 && !activeChannelId) {
       setActiveChannelId(channels[0].id);
     }
-  }, [channels, activeChannelId]);
+  }, [channels, activeChannelId, isMobile]);
 
   const activeChannel = channels.find(c => c.id === activeChannelId);
 
@@ -309,7 +311,7 @@ export default function Workspace() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 62px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
 
       {/* Top Banner for Incoming B2B Requests */}
       {incomingB2BRequests.length > 0 && (
@@ -334,8 +336,8 @@ export default function Workspace() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <div style={{ width: 224, flexShrink: 0 }}>
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ width: isMobile ? '100%' : 224, flexShrink: 0, display: isMobile && (activeChannelId || activeDm) ? 'none' : 'block' }}>
           <WorkspaceSidebar
             workspace={workspace}
             channels={channels}
@@ -355,10 +357,12 @@ export default function Workspace() {
           activeDm={activeDm}
           workspaceId={activeChannel?.workspace_id || workspace.id}
           user={user}
+          isMobile={isMobile}
+          onBack={() => { setActiveChannelId(null); setActiveDm(null); }}
         />
 
         {/* Directory panel */}
-        <div style={{ width: 220, flexShrink: 0, background: '#0B1628', borderLeft: '1px solid rgba(255,255,255,.07)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <div style={{ width: 220, flexShrink: 0, background: '#0B1628', borderLeft: '1px solid rgba(255,255,255,.07)', display: isMobile ? 'none' : 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           {/* Header */}
           <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(150,190,240,.55)', textTransform: 'uppercase', letterSpacing: '.8px', marginBottom: 8 }}>Directory</div>

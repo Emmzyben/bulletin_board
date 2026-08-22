@@ -1,0 +1,9 @@
+{
+  "name": "Bulletinboard",
+  "short_name": "Bulletinboard",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060D1A",
+  "theme_color": "#1B6EF3",
+  "description": "A professional community feed and collaborative workspace."
+}

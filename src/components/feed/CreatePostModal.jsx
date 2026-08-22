@@ -170,11 +170,22 @@ export default function CreatePostModal({ open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg" style={{ top: 'calc(56px + 5vh)', transform: 'translateX(-50%)', marginTop: 0 }}>
+      <DialogContent
+        className="sm:max-w-lg"
+        style={{
+          top: 'calc(56px + 5vh)',
+          transform: 'translateX(-50%)',
+          marginTop: 0,
+          maxHeight: 'calc(100vh - 56px - 5vh - 16px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl">Create Post</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 mt-2">
+        <div className="space-y-4 mt-2 min-h-0 overflow-y-auto pr-1">
           {errors.submit && (
             <div className="flex gap-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md text-sm text-red-700 dark:text-red-200">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />

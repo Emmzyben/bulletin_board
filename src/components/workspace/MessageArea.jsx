@@ -12,10 +12,36 @@ import { pinata } from '@/lib/pinata';
 
 const QUICK_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🎉', '🔥', '👏'];
 
+const normalizeReactions = (rawReactions) => {
+  if (typeof rawReactions === 'string') {
+    try {
+      return normalizeReactions(JSON.parse(rawReactions));
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(rawReactions)) {
+    return rawReactions.filter(reaction => reaction && reaction.emoji);
+  }
+
+  if (rawReactions && typeof rawReactions === 'object') {
+    if (Array.isArray(rawReactions.reactions)) {
+      return normalizeReactions(rawReactions.reactions);
+    }
+
+    return Object.entries(rawReactions)
+      .filter(([, users]) => Array.isArray(users))
+      .map(([emoji, users]) => ({ emoji, users }));
+  }
+
+  return [];
+};
+
 function MessageReactions({ msg, userEmail, onReact }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [hovering, setHovering] = useState(false);
-  const reactions = msg.reactions || [];
+  const reactions = normalizeReactions(msg.reactions);
 
   const userReacted = (emoji) => {
     const r = reactions.find(r => r.emoji === emoji);
@@ -98,7 +124,7 @@ function formatMsgTime(dateStr) {
   return format(d, 'MMM d') + ' ' + timeStr;
 }
 
-export default function MessageArea({ channelId, channelName, activeDm, workspaceId }) {
+export default function MessageArea({ channelId, channelName, activeDm, workspaceId, isMobile = false, onBack }) {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -299,7 +325,10 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
   };
 
   const handleReact = async (msg, emoji) => {
-    const reactions = msg.reactions ? [...msg.reactions] : [];
+    const reactions = normalizeReactions(msg.reactions).map(reaction => ({
+      ...reaction,
+      users: Array.isArray(reaction.users) ? [...reaction.users] : [],
+    }));
     const existing = reactions.find(r => r.emoji === emoji);
     if (existing) {
       const alreadyReacted = existing.users?.includes(user?.email);
@@ -425,6 +454,13 @@ export default function MessageArea({ channelId, channelName, activeDm, workspac
 
       {/* Channel header */}
       <div style={{ height: 50, background: 'rgba(11,22,40,.7)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', padding: '0 18px', gap: 12, flexShrink: 0, position: 'relative', zIndex: 2 }}>
+        {isMobile && (
+          <button
+            onClick={onBack}
+            title="Back to workspace"
+            style={{ border: 'none', background: 'transparent', color: '#7FA8D4', fontSize: 22, lineHeight: 1, cursor: 'pointer', padding: '4px 8px 4px 0' }}
+          >‹</button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#EEF4FF', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '-0.2px' }}>
             {activeDm ? (
