@@ -4,7 +4,7 @@ import { api } from '../api';
 import { toast } from 'sonner';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
-import { pinata } from '../lib/pinata';
+import { uploadFile } from '../lib/upload';
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export const usePostCreation = () => {
@@ -32,15 +32,8 @@ export const usePostCreation = () => {
     
     setIsUploadingImage(true);
     try {
-      const { url } = await api.get('/upload/presigned_url');
-      const upload = await pinata.upload.public.file(imageFile).url(url);
-      
-      if (!upload.cid) {
-        throw new Error('Upload failed: No CID returned');
-      }
-
-      const ipfsLink = await pinata.gateways.public.convert(upload.cid);
-      return ipfsLink;
+      const data = await uploadFile(imageFile);
+      return data.url;
     } catch (error) {
       // Re-throw with context for better debugging
       console.error('Image upload error:', {

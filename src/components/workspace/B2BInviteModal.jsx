@@ -52,7 +52,8 @@ export default function B2BInviteModal({ open, onClose, workspaceId, workspaceNa
       queryClient.invalidateQueries({ queryKey: ['channels'] });
       
       // 3. Send the invite email
-      await sendB2BInviteEmail(adminEmail, inviterName, workspaceName);
+      const emailSent = await sendB2BInviteEmail(adminEmail, inviterName, workspaceName);
+      if (!emailSent) throw new Error('B2B invitation was created, but the email could not be sent');
 
       toast.success(`Invite sent to ${companyName}`);
 
@@ -63,7 +64,9 @@ export default function B2BInviteModal({ open, onClose, workspaceId, workspaceNa
       onClose();
     } catch (error) {
       console.error('Error creating B2B space:', error);
-      toast.error(error.message || 'Failed to send invite');
+      let message = error.message || 'Failed to send invite';
+      try { message = JSON.parse(message).error || message; } catch {}
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -83,6 +86,7 @@ export default function B2BInviteModal({ open, onClose, workspaceId, workspaceNa
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Admin Email</Label>
             <Input value={adminEmail} onChange={e => setAdminEmail(e.target.value)} placeholder="admin@company.com" type="email" />
+            <p className="mt-1.5 text-xs text-muted-foreground">The invited admin must already own a workspace.</p>
           </div>
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Relationship</Label>

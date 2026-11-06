@@ -191,11 +191,12 @@ export default function Leaderboard() {
               const heights = ['130px', '160px', '110px'];
               const glows = ['', '0 0 30px rgba(245,158,11,.25)', ''];
               const karmaLevel = getKarmaLevel(a.karma || 0);
+              const KarmaLevelIcon = typeof karmaLevel?.icon === 'function' ? karmaLevel.icon : null;
               const isCurrentUser = a.email === user?.email;
               return (
                 <div
                   key={a.email}
-                  onClick={() => navigate(`/user-profile?email=${encodeURIComponent(a.email)}`)}
+                  onClick={() => navigate(`/user-profile?userId=${encodeURIComponent(a.email)}`)}
                   style={{
                     background: rank === 0 ? 'linear-gradient(160deg,rgba(245,158,11,.12),rgba(27,110,243,.08))' : cardBg,
                     border: `1px solid ${rank === 0 ? 'rgba(245,158,11,.35)' : cardBorder}`,
@@ -223,7 +224,7 @@ export default function Leaderboard() {
                   <div style={{ background: 'rgba(27,110,243,.12)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, color: '#6AADFF' }}>
                     {a.score.toLocaleString()} pts
                   </div>
-                  <p style={{ fontSize: 11, color: textMuted, display: 'flex', alignItems: 'center', gap: 4 }}><karmaLevel.icon size={12} /> {karmaLevel.level}</p>
+                  <p style={{ fontSize: 11, color: textMuted, display: 'flex', alignItems: 'center', gap: 4 }}>{KarmaLevelIcon ? <KarmaLevelIcon size={12} /> : null} {karmaLevel.level}</p>
                 </div>
               );
             })}
@@ -252,11 +253,12 @@ export default function Leaderboard() {
 
             {filtered.map((a, i) => {
               const karmaLevel = getKarmaLevel(a.karma || 0);
+              const KarmaLevelIcon = typeof karmaLevel?.icon === 'function' ? karmaLevel.icon : null;
               const isCurrentUser = a.email === user?.email;
               return (
                 <div
                   key={a.email}
-                  onClick={() => navigate(`/user-profile?email=${encodeURIComponent(a.email)}`)}
+                  onClick={() => navigate(`/user-profile?userId=${encodeURIComponent(a.email)}`)}
                   style={{
                     display: 'grid', gridTemplateColumns: '48px 1fr auto auto auto auto', gap: 12, alignItems: 'center',
                     padding: '14px 16px', borderRadius: 12, cursor: 'pointer',
@@ -289,7 +291,7 @@ export default function Leaderboard() {
                       </p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 11, color: textMuted }}>@{a.email.split('@')[0]}</span>
-                        <span style={{ fontSize: 10, color: '#B39DDB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><karmaLevel.icon size={12} /> {karmaLevel.level}</span>
+                        <span style={{ fontSize: 10, color: '#B39DDB', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{KarmaLevelIcon ? <KarmaLevelIcon size={12} /> : null} {karmaLevel.level}</span>
                       </div>
                     </div>
                   </div>

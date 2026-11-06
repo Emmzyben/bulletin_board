@@ -19,7 +19,7 @@ const MILESTONES = [
   { year: '2023', label: 'Beta launch', desc: 'Bulletin Board enters private beta with 200 invited professionals.' },
   { year: '2024', label: 'GP Feed goes public', desc: 'Public feed opens to all 9 professional ecosystems.' },
   { year: '2025', label: 'B2B Spaces', desc: 'B2B collaboration spaces ship — 400+ companies connected.' },
-  { year: '2026', label: '2,400+ members', desc: 'Platform grows across 40+ countries with Pro and Enterprise plans.' },
+  { year: '2026', label: '2,400+ members', desc: 'Platform grows across 40+ countries with Pro plans.' },
 ];
 
 export default function About() {
@@ -30,7 +30,7 @@ export default function About() {
 
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(6,13,26,.95)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,.07)', padding: '0 24px', height: 62, display: 'flex', alignItems: 'center' }}>
         <Link to="/home" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 'auto' }}>
-          <img src="https://media.base44.com/images/public/69ebbbf6d42430b1fdaa3ecc/5d21bc6b3_bbs_logo2-removebg-preview1.png" alt="Bulletin Board" style={{ height: 40, width: 'auto' }} />
+          <img src="/bbs_logo.png" alt="Bulletin Board" style={{ height: 40, width: 'auto' }} />
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link to="/home" style={{ fontSize: 14, color: '#7FA8D4', textDecoration: 'none', fontWeight: 500 }}>← Back to Home</Link>
@@ -127,7 +127,7 @@ export default function About() {
               { value: '9', label: 'Industries served' },
               { value: '40+', label: 'Countries' },
               { value: '100%', label: 'E2E encrypted workspaces' },
-              { value: '$7.99', label: 'Per user/month (Pro)' },
+              { value: 'Free', label: 'Public professional community' },
             ].map(s => (
               <div key={s.label}>
                 <div style={{ fontSize: 30, fontWeight: 900, color: '#EEF4FF', letterSpacing: '-1px', marginBottom: 6 }}>{s.value}</div>

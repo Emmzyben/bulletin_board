@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/api';
 import { Loader2, Cpu, Stethoscope, Building2, BookOpen, Building, Home, Hotel, Briefcase, Music, Search } from 'lucide-react';
-import { getEcosystem, getFlair } from '@/lib/ecosystems';
+import { getFlair } from '@/lib/ecosystems';
 import { useQuery } from '@tanstack/react-query';
 
 export default function GlobalSearch() {
@@ -40,35 +40,30 @@ export default function GlobalSearch() {
 
   const trimmed = query.trim().toLowerCase();
 
-  const { data: matchedPosts = [], isFetching: fetchingPosts } = useQuery({
+  const { data: matchedPosts = [], isFetching: fetchingPosts, isError: postsSearchError, error: postsSearchErrorDetails } = useQuery({
     queryKey: ['search-posts', trimmed],
     queryFn: async () => {
-      try {
-        const data = await api.get(`/search/posts?q=${encodeURIComponent(trimmed)}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
+      const data = await api.get(`/search/posts?q=${encodeURIComponent(trimmed)}`);
+      if (!Array.isArray(data)) throw new Error('The post search response was invalid.');
+      return data;
     },
     enabled: trimmed.length >= 2,
     staleTime: 30000,
   });
 
-  const { data: matchedUsers = [], isFetching: fetchingUsers } = useQuery({
+  const { data: matchedUsers = [], isFetching: fetchingUsers, isError: usersSearchError, error: usersSearchErrorDetails } = useQuery({
     queryKey: ['search-users', trimmed],
     queryFn: async () => {
-      try {
-        const data = await api.get(`/search/users?q=${encodeURIComponent(trimmed)}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
+      const data = await api.get(`/search/users?q=${encodeURIComponent(trimmed)}`);
+      if (!Array.isArray(data)) throw new Error('The user search response was invalid.');
+      return data;
     },
     enabled: trimmed.length >= 2,
     staleTime: 30000,
   });
 
   const isLoading = fetchingPosts || fetchingUsers;
+  const searchError = postsSearchError ? postsSearchErrorDetails : usersSearchErrorDetails;
 
   // Ecosystem / community search
   const ECOSYSTEMS = [
@@ -97,7 +92,7 @@ export default function GlobalSearch() {
   const handleUserClick = (u) => {
     setOpen(false);
     setQuery('');
-    navigate(`/user-profile?email=${encodeURIComponent(u.email)}`);
+    navigate(`/user-profile?userId=${encodeURIComponent(u.email)}`);
   };
 
   const handleEcoClick = (eco) => {
@@ -142,7 +137,13 @@ export default function GlobalSearch() {
           borderRadius: 14, boxShadow: '0 12px 40px rgba(0,0,0,.15)', zIndex: 9999,
           maxHeight: 480, overflowY: 'auto',
         }}>
-          {!hasResults && !isLoading && (
+          {searchError && !isLoading && (
+            <div role="alert" style={{ padding: '20px', textAlign: 'center', color: '#B91C1C', fontSize: 13 }}>
+              Search failed: {searchError.message || 'Please try again.'}
+            </div>
+          )}
+
+          {!hasResults && !isLoading && !searchError && (
             <div style={{ padding: '32px 20px', textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>
               No results for "{query}"
             </div>

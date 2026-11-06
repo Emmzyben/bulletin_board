@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { api } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Heart, MessageCircle, Bookmark, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { toast } from 'sonner';
+import CommentSection from './CommentSection';
+import PollCard from './PollCard';
 
-export default function PostCardMobile({ post, userEmail, isGuest = false }) {
+export default function PostCardMobile({ post, userEmail, savedPosts = [], myPollVote, isGuest = false }) {
   const [expanded, setExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const queryClient = useQueryClient();
   const authorName = post.author?.full_name || post.author_name || 'Anonymous';
   const authorAvatar = post.author?.avatar_url || post.author_avatar_url || null;
+  const isSaved = savedPosts.includes(post.id);
 
   const handleVote = async (voteType) => {
     if (isGuest || !userEmail) {
@@ -27,6 +29,27 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
     } catch (error) {
       console.error('Vote failed:', error);
       toast.error('Failed to record vote');
+    }
+  };
+
+  const handleSave = async () => {
+    if (isGuest || !userEmail) {
+      toast.error('Please sign in to save posts');
+      return;
+    }
+    try {
+      if (isSaved) {
+        await api.delete(`/saved-posts/${post.id}`);
+        toast.success('Post removed from saved');
+      } else {
+        await api.post('/saved-posts', { post_id: post.id });
+        toast.success('Post saved');
+      }
+      queryClient.invalidateQueries({ queryKey: ['savedPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    } catch (error) {
+      console.error('Save post failed:', error);
+      toast.error('Failed to update saved posts');
     }
   };
 
@@ -59,7 +82,7 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
             {authorName}
           </div>
           <div style={{ fontSize: 'clamp(11px, 2.5vw, 12px)', color: '#6B93C4' }}>
-            {post.created_at ? new Date(post.created_at).toLocaleDateString() : 'Just now'}
+            {(post.created_at || post.createdAt) ? new Date(post.created_at || post.createdAt).toLocaleDateString() : 'Just now'}
           </div>
         </div>
         <div style={{
@@ -125,6 +148,16 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>🔖 {post.saves_count || 0}</span>
       </div>
 
+      {post.flair === 'poll' && (
+        <PollCard
+          post={post}
+          userEmail={userEmail}
+          isGuest={isGuest}
+          myVote={myPollVote}
+          onRequireLogin={() => toast.error('Please sign in to vote')}
+        />
+      )}
+
       {/* Actions - Touch-friendly buttons */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'max(8px, 1.5vw)',
@@ -132,26 +165,38 @@ export default function PostCardMobile({ post, userEmail, isGuest = false }) {
         {[
           { icon: Heart, label: 'Vote', onClick: () => handleVote('up'), color: '#00C853' },
           { icon: MessageCircle, label: 'Comment', onClick: () => setShowComments(!showComments), color: '#6AADFF' },
-          { icon: Bookmark, label: 'Save', onClick: () => {}, color: '#FF8F00' },
-        ].map((action, i) => (
-          <button
-            key={i}
-            onClick={action.onClick}
-            style={{
-              height: 'max(40px, 10vw)', minHeight: 44, border: 'none',
-              background: 'rgba(255,255,255,.05)', borderRadius: 8, color: action.color,
-              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', gap: 4, fontSize: 'clamp(10px, 2vw, 11px)', fontWeight: 600,
-              transition: '.15s',
-            }}
-            onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.08)'}
-            onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,.05)'}
-          >
-            <action.icon style={{ width: 'clamp(16px, 4vw, 18px)', height: 'clamp(16px, 4vw, 18px)' }} />
-            {action.label}
-          </button>
-        ))}
+          { icon: Bookmark, label: isSaved ? 'Saved' : 'Save', onClick: handleSave, color: '#FF8F00' },
+        ].map((action, i) => {
+          const ActionIcon = action.icon;
+          return (
+            <button
+              key={i}
+              onClick={action.onClick}
+              style={{
+                height: 'max(40px, 10vw)', minHeight: 44, border: 'none',
+                background: 'rgba(255,255,255,.05)', borderRadius: 8, color: action.color,
+                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', gap: 4, fontSize: 'clamp(10px, 2vw, 11px)', fontWeight: 600,
+                transition: '.15s',
+              }}
+              onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.08)'}
+              onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,.05)'}
+            >
+              <ActionIcon style={{ width: 'clamp(16px, 4vw, 18px)', height: 'clamp(16px, 4vw, 18px)' }} />
+              {action.label}
+            </button>
+          );
+        })}
       </div>
+      {showComments && (
+        <CommentSection
+          post={post}
+          userEmail={userEmail}
+          userName={post.author?.full_name || post.author_name}
+          isGuest={isGuest}
+          onRequireLogin={() => toast.error('Please sign in to comment')}
+        />
+      )}
     </div>
   );
 }

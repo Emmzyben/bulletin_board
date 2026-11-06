@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { RotateCw, CheckCircle, Circle, Briefcase } from 'lucide-react';
+import { usePricingPlans } from '@/hooks/usePricingPlans';
+import { getPlanSeatTotal } from '@/lib/pricing';
 
 const S = {
   card: { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14 },
@@ -15,21 +17,29 @@ const PIPELINE = [
 ];
 
 const LEADS = [
-  { name: 'GlobalVentures LLC', email: 'ops@globalventures.com', type: 'Enterprise', seats: 40, stage: 'Negotiating', value: '$6,720/yr', owner: 'You', priority: 'high', last: '1h ago' },
-  { name: 'BigCorp Ltd', email: 'ceo@bigcorp.com', type: 'Enterprise', seats: 120, stage: 'Demo / Trial', value: '$20,160/yr', owner: 'You', priority: 'high', last: '3h ago' },
-  { name: 'Retail Co Ltd', email: 'diana@retailco.com', type: 'Assisted', seats: 15, stage: 'Closed', value: '$1,800/yr', owner: 'You', priority: 'medium', last: 'Apr 22' },
-  { name: 'MedCare Group', email: 'info@medcaregroup.com', type: 'Assisted', seats: 22, stage: 'Interested', value: '$2,112/yr', owner: 'You', priority: 'medium', last: 'Apr 21' },
-  { name: 'EduTech Solutions', email: 'admin@edutechsol.com', type: 'Enterprise', seats: 60, stage: 'Lead', value: 'TBD', owner: 'You', priority: 'low', last: 'Apr 20' },
-  { name: 'FinancePros Inc', email: 'finance@fpros.com', type: 'Assisted', seats: 10, stage: 'Demo / Trial', value: '$960/yr', owner: 'You', priority: 'medium', last: 'Apr 19' },
+  { name: 'GlobalVentures LLC', email: 'ops@globalventures.com', type: 'Assisted', planId: 'annual', seats: 40, stage: 'Negotiating', owner: 'You', priority: 'high', last: '1h ago' },
+  { name: 'BigCorp Ltd', email: 'ceo@bigcorp.com', type: 'Assisted', planId: 'annual', seats: 120, stage: 'Demo / Trial', owner: 'You', priority: 'high', last: '3h ago' },
+  { name: 'Retail Co Ltd', email: 'diana@retailco.com', type: 'Assisted', planId: 'annual', seats: 15, stage: 'Closed', owner: 'You', priority: 'medium', last: 'Apr 22' },
+  { name: 'MedCare Group', email: 'info@medcaregroup.com', type: 'Assisted', planId: 'pro', seats: 22, stage: 'Interested', owner: 'You', priority: 'medium', last: 'Apr 21' },
+  { name: 'EduTech Solutions', email: 'admin@edutechsol.com', type: 'Assisted', planId: 'annual', seats: 60, stage: 'Lead', owner: 'You', priority: 'low', last: 'Apr 20' },
+  { name: 'FinancePros Inc', email: 'finance@fpros.com', type: 'Assisted', planId: 'pro', seats: 10, stage: 'Demo / Trial', owner: 'You', priority: 'medium', last: 'Apr 19' },
 ];
 
 const stageColor = { Lead: '#6B93C4', Interested: '#00B4D8', 'Demo / Trial': '#FF8F00', Negotiating: '#7C4DFF', Closed: '#00C853' };
 const priorityColor = { high: '#EF5350', medium: '#FF8F00', low: '#00C853' };
 
 export default function SalesTab() {
+  const { plans } = usePricingPlans();
   const [activeStage, setActiveStage] = useState('all');
 
-  const filtered = activeStage === 'all' ? LEADS : LEADS.filter(l => l.stage === activeStage);
+  const filtered = (activeStage === 'all' ? LEADS : LEADS.filter(l => l.stage === activeStage))
+    .map(lead => ({
+      ...lead,
+      value: plans.find(plan => plan.id === lead.planId)
+        ? getPlanSeatTotal(plans.find(plan => plan.id === lead.planId), lead.seats)
+        : '—',
+      planName: plans.find(plan => plan.id === lead.planId)?.name || 'Loading plan',
+    }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -53,7 +63,7 @@ export default function SalesTab() {
         {[
           { icon: CheckCircle, title: 'Self-Serve (Auto)', desc: 'User upgrades themselves. Payment processed instantly. No admin action needed.', action: null },
           { icon: Circle, title: 'Assisted Sales', desc: 'User needs help. Explain plans, recommend option, and close deal with support.', action: 'View Leads' },
-          { icon: Circle, title: 'Enterprise Deals', desc: 'Large company needs custom pricing, onboarding, and contract. You negotiate directly.', action: 'Open Deals' },
+          { icon: Circle, title: 'Pro Annual Leads', desc: 'Help teams compare Pro monthly and annual pricing.', action: 'Open Leads' },
         ].map(c => {
           const IconComponent = c.icon;
           return (
@@ -88,7 +98,7 @@ export default function SalesTab() {
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#EEF4FF' }}>{l.name}</div>
                   <div style={{ fontSize: 11, color: '#6B93C4' }}>{l.email}</div>
                 </td>
-                <td style={{ padding: '12px 16px', fontSize: 12, color: '#7FA8D4' }}>{l.type}</td>
+                <td style={{ padding: '12px 16px', fontSize: 12, color: '#7FA8D4' }}>{l.planName} · {l.type}</td>
                 <td style={{ padding: '12px 16px', fontSize: 12, color: '#7FA8D4' }}>{l.seats}</td>
                 <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: '#EEF4FF' }}>{l.value}</td>
                 <td style={{ padding: '12px 16px' }}>
@@ -101,7 +111,6 @@ export default function SalesTab() {
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: 5 }}>
                     <button onClick={() => toast.success('Email sent to ' + l.email)} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 6, border: 'none', background: '#1B6EF3', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Email</button>
-                    {l.type === 'Enterprise' && <button onClick={() => toast.success('Quote sent')} style={{ fontSize: 11, padding: '4px 9px', borderRadius: 6, border: 'none', background: '#7C4DFF', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Quote</button>}
                   </div>
                 </td>
               </tr>

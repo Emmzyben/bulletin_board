@@ -9,42 +9,73 @@ const sideCard = {
 };
 
 const STOP_WORDS = new Set([
-  'the','a','an','and','or','but','in','on','at','to','for','of','with',
-  'is','are','was','were','be','been','has','have','had','it','its','this',
-  'that','as','by','from','they','we','you','i','me','my','our','their','your',
-  'how','what','why','who','when','which','can','will','do','does','did',
-  'just','more','most','about','than','up','down','out','so','now','all',
-  'not','no','new','ai','use','using','using','data','platform','using','into',
+  'the','a','an','and','or','but','in','on','at','to','for','of','with','into',
+  'is','are','was','were','be','been','has','have','had','it','its','this','that',
+  'as','by','from','they','we','you','i','me','my','our','their','your','yourself',
+  'how','what','why','who','when','which','can','will','do','does','did','should',
+  'just','more','most','about','than','up','down','out','so','now','all','not','no',
+  'new','use','using','used','data','platform','team','work','working','also','there',
+  'here','through','after','before','without','under','over','very','same','today',
+  'tomorrow','week','month','year','people','person','thing','things','post','posts',
+  'topic','topics','discussion','question','news','poll','feed','website','app','board',
+  'project','feature','community','example','examples','sample','demo','test','testing',
+  'tested','give','full','definition','language','structure','dear'
 ]);
 
+function normalizeText(value = '') {
+  return value
+    .toLowerCase()
+    .replace(/[#@]/g, ' ')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractTerms(text) {
+  return normalizeText(text)
+    .split(' ')
+    .filter(token => token.length >= 3 && !STOP_WORDS.has(token));
+}
+
 function extractTopics(posts) {
-  const scores = {};   // topic → engagement score
-  const counts = {};   // topic → post count
+  const scores = {};
+  const counts = {};
 
   for (const post of posts) {
-    const text = `${post.title || ''} ${post.body || ''}`;
-    const engagement = (post.vote_score || 0) * 2 + (post.comment_count || 0);
+    const title = post.title || '';
+    const body = post.body || '';
+    const text = `${title} ${body}`;
+    const engagement = (post.vote_score || 0) * 3 + (post.comment_count || 0) * 2 + 3;
 
-    // Extract explicit #hashtags
-    const hashtags = [...text.matchAll(/#([a-zA-Z][a-zA-Z0-9_]{2,})/g)].map(m => '#' + m[1].toLowerCase());
+    const hashtags = [...text.matchAll(/#([a-zA-Z][a-zA-Z0-9_]{2,})/g)]
+      .map(match => `#${match[1].toLowerCase()}`);
 
-    // Extract meaningful 1–2 word phrases (stop-word filtered)
-    const words = text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s#]/g, ' ')
-      .split(/\s+/)
-      .filter(w => w.length > 3 && !STOP_WORDS.has(w) && !w.startsWith('#'));
+    const titleTerms = extractTerms(title);
+    const bodyTerms = extractTerms(body);
+    const seen = new Set();
 
-    const topics = [...new Set([...hashtags, ...words.slice(0, 12)])];
+    for (const topic of hashtags) {
+      const normalized = topic.toLowerCase();
+      if (seen.has(normalized)) continue;
+      seen.add(normalized);
+      scores[normalized] = (scores[normalized] || 0) + engagement * 6;
+      counts[normalized] = (counts[normalized] || 0) + 1;
+    }
 
-    for (const topic of topics) {
-      scores[topic] = (scores[topic] || 0) + Math.max(1, engagement);
-      counts[topic] = (counts[topic] || 0) + 1;
+    for (const topic of [...titleTerms, ...bodyTerms]) {
+      const normalized = topic.toLowerCase();
+      if (normalized.length < 4 || !/^[a-z]/.test(normalized) || STOP_WORDS.has(normalized)) continue;
+      if (seen.has(normalized)) continue;
+      seen.add(normalized);
+
+      const weight = title.includes(normalized) ? 4 : 2;
+      scores[normalized] = (scores[normalized] || 0) + engagement * weight;
+      counts[normalized] = (counts[normalized] || 0) + 1;
     }
   }
 
   return Object.entries(scores)
-    .filter(([, score]) => score > 0)
+    .filter(([topic, score]) => score > 0 && (counts[topic] >= 2 || topic.startsWith('#')))
     .sort((a, b) => b[1] - a[1])
     .slice(0, 12)
     .map(([topic, score]) => ({ topic, score, count: counts[topic] || 1 }));

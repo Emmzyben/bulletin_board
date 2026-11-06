@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { usePricingPlans } from '@/hooks/usePricingPlans';
+import { getPlanBillingDescription, getPlanPriceLabel } from '@/lib/pricing';
 import {
   ChevronLeft, ChevronRight, Pause, Play,
   Globe, Building2, Mic, MicOff, Wrench, Handshake, DollarSign,
@@ -9,7 +11,7 @@ import {
   CreditCard, Cloud, CalendarDays, Paintbrush,
   Lock, Clapperboard, PartyPopper, Clock,
   Newspaper, Flame, Video, Monitor, PhoneOff,
-  Star, Leaf, Check, ChevronUp, ChevronDown,
+  Check, ChevronUp, ChevronDown,
 } from 'lucide-react';
 
 const STEPS = [
@@ -285,20 +287,11 @@ function StepContent({ step }) {
 
   if (step === 6) return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-      {[
-        { name: 'Free',       price: '$0',    period: 'forever',         features: ['Browse 9 ecosystems', '3 posts/month', 'Unlimited commenting'], highlight: false },
-        { name: 'Pro',        price: '$7.99', period: '/user/mo',        features: ['Unlimited posting', 'Private workspace', 'Voice huddles', 'E2E DMs'], highlight: true,  BadgeIcon: Star,     badgeLabel: 'Popular',    badgeColor: '#6AADFF' },
-        { name: 'Annual',     price: '$6.40', period: '/user/mo · save 20%', features: ['Everything in Pro', '2 months free', '100 GB storage'],    highlight: false, BadgeIcon: Leaf,     badgeLabel: 'Best value', badgeColor: '#00C853' },
-        { name: 'Enterprise', price: '$14',   period: '/user/mo',        features: ['10 workspaces', 'SSO / SAML', 'Audit logs', '99.9% SLA'],     highlight: false, BadgeIcon: Building2, badgeLabel: 'Enterprise', badgeColor: '#B39DDB' },
-      ].map(p => (
-        <div key={p.name} style={{ background: p.highlight ? 'rgba(27,110,243,.1)' : 'rgba(255,255,255,.04)', border: p.highlight ? '1px solid rgba(27,110,243,.35)' : '1px solid rgba(255,255,255,.07)', borderRadius: 12, padding: '14px' }}>
-          {p.BadgeIcon && (
-            <div style={{ fontSize: 10, fontWeight: 800, color: p.badgeColor, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <p.BadgeIcon style={{ width: 10, height: 10 }} /> {p.badgeLabel}
-            </div>
-          )}
+      {plans.map(p => (
+        <div key={p.id} style={{ background: p.id === 'pro' ? 'rgba(27,110,243,.1)' : 'rgba(255,255,255,.04)', border: p.id === 'pro' ? '1px solid rgba(27,110,243,.35)' : '1px solid rgba(255,255,255,.07)', borderRadius: 12, padding: '14px' }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#EEF4FF' }}>{p.name}</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#EEF4FF', marginTop: 4 }}>{p.price}<span style={{ fontSize: 11, fontWeight: 400, color: '#6B93C4' }}> {p.period}</span></div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: '#EEF4FF', marginTop: 4 }}>{getPlanPriceLabel(p)}</div>
+          <div style={{ fontSize: 10, color: '#6B93C4', marginTop: 2 }}>{getPlanBillingDescription(p)}</div>
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
             {p.features.map(f => (
               <div key={f} style={{ fontSize: 11, color: '#7FA8D4', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -316,6 +309,7 @@ function StepContent({ step }) {
 
 export default function Demo() {
   const { navigateToLogin } = useAuth();
+  const { plans } = usePricingPlans();
   const [currentStep, setCurrentStep] = useState(1);
   const [paused, setPaused] = useState(false);
 
@@ -334,7 +328,7 @@ export default function Demo() {
     <div style={{ background: 'linear-gradient(160deg,#071020 0%,#0B1628 50%,#0A1F1A 100%)', minHeight: '100vh', color: '#EEF4FF', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ height: 56, background: 'rgba(6,13,26,.95)', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', padding: '0 24px', gap: 16 }}>
         <Link to="/home">
-          <img src="https://media.base44.com/images/public/69ebbbf6d42430b1fdaa3ecc/5d21bc6b3_bbs_logo2-removebg-preview1.png" alt="BB" style={{ height: 36 }} />
+          <img src="/bbs_logo.png" alt="BB" style={{ height: 36 }} />
         </Link>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#6AADFF', display: 'flex', alignItems: 'center', gap: 6 }}>
           <Clapperboard style={{ width: 14, height: 14 }} /> Interactive Product Demo

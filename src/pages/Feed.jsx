@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/lib/ThemeContext';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, socket } from '@/api';
 import PostCard from '../components/feed/PostCard';
-import NewsCard from '../components/feed/NewsCard';
 import FeedLeftSidebar from '../components/feed/FeedLeftSidebar';
 import FeedRightSidebar from '../components/feed/FeedRightSidebar';
 import AdvancedSearch from '../components/feed/AdvancedSearch';
@@ -12,89 +11,124 @@ import { Loader2, Bookmark, Inbox } from 'lucide-react';
 
 export default function Feed() {
   const { user, setShowCreatePost, mobileMenuOpen, navigateToLogin } = useOutletContext();
+  const queryClient = useQueryClient();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const location = useLocation();
   const isSavedView = location.pathname === '/saved';
+  const isMyPostsView = location.pathname === '/my-posts';
   const navigate = useNavigate();
 
-  // Redirect guests away from the saved-posts view
+  // Redirect guests away from personal feed views.
   useEffect(() => {
-    if (isSavedView && !user) {
+    if ((isSavedView || isMyPostsView) && !user) {
       navigateToLogin();
     }
-  }, [isSavedView, user]);
+  }, [isSavedView, isMyPostsView, user, navigateToLogin]);
 
   const [activeTab, setActiveTab] = useState('explore');
-  const [activeEcosystem, setActiveEcosystem] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('eco') || null;
-  });
+  const [activeEcosystem, setActiveEcosystem] = useState(null);
   const [activeFlair, setActiveFlair] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [advancedFilters, setAdvancedFilters] = useState({ ecosystem: '', flair: '', sortBy: 'recent' });
   const [activeTopic, setActiveTopic] = useState(null);
-  const joinedCommunities = user?.joined_communities || [];
 
-  // On mount, if ?eco= is in URL, apply the filter then clean up the URL
+  // Support both ecosystem query parameter names used by feed links.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const eco = params.get('eco');
+    const eco = params.get('eco') || params.get('ecosystem');
     if (eco) {
       setActiveEcosystem(eco);
-      navigate('/', { replace: true });
+      params.delete('eco');
+      params.delete('ecosystem');
+      navigate(
+        { pathname: location.pathname, search: params.toString() ? `?${params}` : '' },
+        { replace: true }
+      );
     }
-  }, []);
+  }, [location.pathname, location.search, navigate]);
 
-  const [newPostsAvailable, setNewPostsAvailable] = useState(false);
-  const [lastPostId, setLastPostId] = useState(null);
-
-  const { data: newsData } = useQuery({
-    queryKey: ['live-news'],
-    queryFn: async () => {
-      try {
-        const data = await api.get('/news');
-        return data;
-      } catch (err) {
-        return { news: [] };
-      }
-    },
-    refetchInterval: 5 * 60 * 1000, // refresh every 5 min
-    staleTime: 5 * 60 * 1000,
-  });
-  const newsArticles = newsData?.news || [];
-
-  const { data: posts = [], isLoading, refetch } = useQuery({
+  const { data: posts = [], isLoading, isError: postsError, error: postsErrorDetails, refetch } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
       const data = await api.get('/posts');
-      return data || [];
+      if (!Array.isArray(data)) throw new Error('The feed response was not a post list.');
+      return data;
     },
-    refetchInterval: 30000,
   });
 
-  const { data: votes = [] } = useQuery({
+  useEffect(() => {
+    const handleNewPost = (post) => {
+      if (!post?.id) return;
+      queryClient.setQueryData(['posts'], currentPosts => {
+        const postsWithoutDuplicate = (currentPosts || []).filter(item => item.id !== post.id);
+        return [post, ...postsWithoutDuplicate];
+      });
+    };
+    const handleVoteUpdated = (voteUpdate) => {
+      if (!voteUpdate?.id) return;
+      queryClient.setQueryData(['posts'], currentPosts =>
+        (currentPosts || []).map(post => post.id === voteUpdate.id
+          ? { ...post, ...voteUpdate }
+          : post)
+      );
+      if (voteUpdate.voter_email === user?.email && voteUpdate.vote_type) {
+        queryClient.setQueryData(['votes', user.email], currentVotes => [
+          ...(currentVotes || []).filter(vote => vote.post_id !== voteUpdate.id),
+          {
+            post_id: voteUpdate.id,
+            voter_email: user.email,
+            vote_type: voteUpdate.vote_type,
+          },
+        ]);
+      }
+    };
+
+    socket.on('new_post', handleNewPost);
+    socket.on('vote_updated', handleVoteUpdated);
+    return () => {
+      socket.off('new_post', handleNewPost);
+      socket.off('vote_updated', handleVoteUpdated);
+    };
+  }, [queryClient, user?.email]);
+
+  const { data: votes = [], isError: votesError, refetch: refetchVotes } = useQuery({
     queryKey: ['votes', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
       const data = await api.get('/votes');
-      return data || [];
+      if (!Array.isArray(data)) throw new Error('The vote response was invalid.');
+      return data;
     },
     enabled: !!user?.email,
   });
 
-  const { data: savedPosts = [] } = useQuery({
+  const { data: pollVotes = [], isError: pollVotesError, refetch: refetchPollVotes } = useQuery({
+    queryKey: ['pollVotes', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const data = await api.get('/poll-votes');
+      if (!Array.isArray(data)) throw new Error('The poll vote response was invalid.');
+      return data;
+    },
+    enabled: !!user?.email,
+  });
+
+  const { data: savedPosts = [], isError: savedPostsError, refetch: refetchSavedPosts } = useQuery({
     queryKey: ['savedPosts', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
       const data = await api.get('/saved-posts');
-      return data || [];
+      if (!Array.isArray(data)) throw new Error('The saved-post response was invalid.');
+      return data;
     },
     enabled: !!user?.email,
   });
 
   const userVotes = {};
   votes.forEach(v => { userVotes[v.post_id] = v.vote_type; });
+  const userPollVotes = {};
+  pollVotes.forEach(vote => { userPollVotes[vote.post_id] = vote.option_index; });
   const savedIds = savedPosts.map(s => s.post_id);
 
   let filteredPosts = [...posts];
@@ -102,7 +136,7 @@ export default function Feed() {
   // Search filter
   if (searchQuery) {
     filteredPosts = filteredPosts.filter(p => 
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.body?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.author_name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -132,7 +166,11 @@ export default function Feed() {
   } else if (advancedFilters.sortBy === 'most-comments') {
     filteredPosts.sort((a, b) => (b.comment_count || 0) - (a.comment_count || 0));
   } else if (advancedFilters.sortBy === 'oldest') {
-    filteredPosts.reverse();
+    filteredPosts.sort((a, b) => {
+      const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+      const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+      return dateA - dateB;
+    });
   }
 
   // Ecosystem filter
@@ -149,30 +187,52 @@ export default function Feed() {
     );
   }
 
+  if (isMyPostsView && user?.email) {
+    filteredPosts = filteredPosts.filter(p => p.author_email === user.email);
+  }
+
   // Saved view — only show saved posts
   if (isSavedView) {
     filteredPosts = filteredPosts.filter(p => savedIds.includes(p.id));
   }
 
-  // Mix news articles into feed every ~4 posts (also inject after 2nd post so news is visible even with few posts)
-  const mixedFeed = [];
-  let newsIndex = 0;
-  const shouldMixNews = !isSavedView && !searchQuery && !advancedFilters.ecosystem && !advancedFilters.flair;
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const topPosts = posts
+    .filter(post => {
+      const createdAt = post.created_at || post.createdAt;
+      const timestamp = createdAt ? new Date(createdAt).getTime() : NaN;
+      return Number.isFinite(timestamp) && timestamp >= weekAgo;
+    })
+    .sort((a, b) => (b.vote_score || 0) - (a.vote_score || 0))
+    .slice(0, 5);
 
-  // If we have news but few/no posts, show news at top
-  if (shouldMixNews && newsArticles.length > 0 && filteredPosts.length === 0) {
-    newsArticles.slice(0, 5).forEach(a => mixedFeed.push({ type: 'news', data: a }));
-  }
+  const postToFocus = new URLSearchParams(location.search).get('post');
+  useEffect(() => {
+    if (!postToFocus) return;
+    setActiveTab('explore');
+    setActiveEcosystem(null);
+    setActiveFlair(null);
+    setSearchQuery('');
+    setAdvancedFilters({ ecosystem: '', flair: '', sortBy: 'recent' });
+    setActiveTopic(null);
+  }, [postToFocus]);
 
-  filteredPosts.forEach((post, i) => {
-    mixedFeed.push({ type: 'post', data: post });
-    // Insert news after every 3rd post (i=2,5,8...) instead of every 4th
-    if ((i + 1) % 3 === 0 && newsIndex < newsArticles.length && shouldMixNews) {
-      mixedFeed.push({ type: 'news', data: newsArticles[newsIndex++] });
-    }
-  });
+  useEffect(() => {
+    if (!postToFocus || !posts.some(post => post.id === postToFocus)) return;
+    const frame = requestAnimationFrame(() => {
+      const postElement = document.getElementById(`post-${postToFocus}`);
+      if (!postElement) return;
+      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-  const topPosts = [...posts].sort((a, b) => (b.vote_score || 0) - (a.vote_score || 0)).slice(0, 5);
+      const params = new URLSearchParams(location.search);
+      params.delete('post');
+      navigate(
+        { pathname: location.pathname, search: params.toString() ? `?${params}` : '' },
+        { replace: true }
+      );
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [postToFocus, posts, activeTab, activeEcosystem, activeFlair, searchQuery, advancedFilters, activeTopic, location.pathname, location.search, navigate]);
 
   const handleRequireLogin = (action) => {
     if (!user) { navigateToLogin(); return; }
@@ -208,18 +268,8 @@ export default function Feed() {
             </div>
           )}
 
-          {/* Live feed banner */}
-          {!isSavedView && newPostsAvailable && (
-            <button
-              onClick={() => { setNewPostsAvailable(false); refetch(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-              className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium text-center hover:bg-primary/90 transition-colors mb-3 animate-pulse"
-            >
-              ↑ New posts available — click to refresh
-            </button>
-          )}
-
-          {/* Quick post bar + search — hidden on saved view */}
-          {!isSavedView && (
+          {/* Quick post bar + search — hidden on personal post views */}
+          {!isSavedView && !isMyPostsView && (
             <>
               <button
                 onClick={() => handleRequireLogin(() => setShowCreatePost(true))}
@@ -233,35 +283,54 @@ export default function Feed() {
             </>
           )}
 
+          {user && (votesError || savedPostsError || pollVotesError) && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200" role="status">
+              <span>Your vote, poll vote, or saved-post state could not be loaded.</span>
+              <span className="flex gap-3">
+                {votesError && <button onClick={() => refetchVotes()} className="underline">Retry votes</button>}
+                {pollVotesError && <button onClick={() => refetchPollVotes()} className="underline">Retry poll votes</button>}
+                {savedPostsError && <button onClick={() => refetchSavedPosts()} className="underline">Retry saved posts</button>}
+              </span>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : postsError ? (
+            <div className="text-center py-20" role="alert">
+              <p className="text-destructive mb-3">Could not load the feed: {postsErrorDetails?.message || 'Please try again.'}</p>
+              <button onClick={() => refetch()} className="text-sm text-primary hover:underline">
+                Retry
+              </button>
             </div>
           ) : filteredPosts.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-4xl mb-3 flex justify-center">{isSavedView ? <Bookmark size={40} /> : <Inbox size={40} />}</div>
               <p className="text-muted-foreground">
-                {isSavedView ? 'No saved posts yet — tap the bookmark icon on any post to save it here.' : 'No posts yet. Be the first to post!'}
+                {isSavedView
+                  ? 'No saved posts yet — tap the bookmark icon on any post to save it here.'
+                  : isMyPostsView
+                    ? 'You have not posted yet.'
+                    : 'No posts match these filters. Try adjusting your search or filters.'}
               </p>
             </div>
           ) : (
             <div className="space-y-3 pb-6">
-              {mixedFeed.map((item, idx) =>
-                item.type === 'news' ? (
-                  <NewsCard key={`news-${item.data.id}-${idx}`} article={item.data} />
-                ) : (
-                  <div id={`post-${item.data.id}`} key={item.data.id}>
+              {filteredPosts.map(post => (
+                  <div id={`post-${post.id}`} key={post.id}>
                   <PostCard
-                    post={item.data}
+                    post={post}
                     userVotes={userVotes}
+                    userPollVotes={userPollVotes}
                     savedPosts={savedIds}
                     userEmail={user?.email}
                     userName={user?.full_name || user?.user_metadata?.full_name}
                     isGuest={!user}
                   />
                   </div>
-                )
-              )}
+              ))}
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,11 @@ import { Loader2, ArrowLeft, Mail, Lock, Github, Chrome, UserPlus } from 'lucide
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
+  const inviteEmail = searchParams.get('email') || '';
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const { signUp } = useAuth();
@@ -24,7 +27,7 @@ export default function Signup() {
     try {
       await signUp(email, password, { full_name: fullName || email.split('@')[0] });
       toast.success('Welcome to Bulletin Board!');
-      navigate('/');
+      navigate(redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/');
     } catch (error) {
       toast.error(error.message || 'Failed to register');
     }
@@ -132,7 +135,10 @@ export default function Signup() {
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-slate-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline font-medium">Sign In</Link>
+              <Link
+                to={`/login${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}&email=${encodeURIComponent(inviteEmail)}` : ''}`}
+                className="text-primary hover:underline font-medium"
+              >Sign In</Link>
             </div>
           </CardFooter>
         </Card>

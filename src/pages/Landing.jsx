@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { Cpu, Stethoscope, Building2, GraduationCap, Building, Home, Hotel, Briefcase, Music, Globe, Handshake, Mic, BarChart3, Wrench, Clipboard, Lock, MapPin, Star, Heart, MessageSquare, Newspaper, Megaphone } from 'lucide-react';
+import { usePricingPlans } from '@/hooks/usePricingPlans';
+import { getPlanBillingDescription, getPlanPriceLabel } from '@/lib/pricing';
+import { Cpu, Stethoscope, Building2, GraduationCap, Building, Home, Hotel, Briefcase, Music, Globe, Handshake, Mic, BarChart3, Wrench, Clipboard, Lock, MapPin, MessageSquare, Newspaper, Megaphone } from 'lucide-react';
 
 const S = {
   page: {
@@ -39,29 +41,6 @@ const TESTIMONIALS = [
   { name: 'James Tran', role: 'IT Director · Tech Startup', text: 'We moved our entire team to Bulletin Board and the savings are significant. E2E encryption, B2B chat, the GP Feed, voice huddles — everything we need at a fraction of what we paid before.', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop' },
 ];
 
-const PLANS = [
-  {
-    name: 'Free', price: '$0', period: 'forever', cta: 'Get started free', ctaAction: 'signup',
-    features: ['Browse all 9 ecosystems', '3 GP Feed posts per month', 'Unlimited commenting', 'Public profile'],
-    highlight: false,
-  },
-  {
-    name: 'Pro', price: '$7.99', period: '/ user / month', cta: 'Start free trial', ctaAction: 'signup',
-    features: ['Unlimited GP Feed posting', 'Private workspace & channels', 'Voice & video huddles', 'E2E encrypted DMs', 'File sharing · 50 GB', 'App integrations'],
-    highlight: true, badge: { icon: Star, text: 'Most popular' },
-  },
-  {
-    name: 'Pro Annual', price: '$10', period: '/ user / month', cta: 'Get annual plan', ctaAction: 'signup',
-    features: ['Everything in Pro', '2 months free', '100 GB file storage', 'Dedicated account manager', 'Custom workspace branding'],
-    highlight: false, badge: { icon: Heart, text: 'Best value' },
-  },
-  {
-    name: 'Enterprise', price: '$14', period: '/ user / month', cta: 'Contact sales', ctaAction: 'support',
-    features: ['Up to 10 workspaces', 'SSO / SAML', 'Advanced audit logs', '500 GB shared storage', '99.9% uptime SLA'],
-    highlight: false, badge: { icon: Building2, text: '' },
-  },
-];
-
 function NavBar() {
   const [scrolled, setScrolled] = useState(false);
   const { navigateToLogin } = useAuth();
@@ -83,7 +62,7 @@ function NavBar() {
     }}>
       <Link to="/home" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginRight: 'auto' }}>
         <img
-          src="https://media.base44.com/images/public/69ebbbf6d42430b1fdaa3ecc/5d21bc6b3_bbs_logo2-removebg-preview1.png"
+          src="/bbs_logo.png"
           alt="Bulletin Board"
           style={{ height: 40, width: 'auto', filter: 'drop-shadow(0 2px 8px rgba(27,110,243,.4))' }}
         />
@@ -208,6 +187,10 @@ function TypewriterWord() {
 
 export default function Landing() {
   const { navigateToLogin } = useAuth();
+  const navigate = useNavigate();
+  const { plans, isLoading: pricingLoading, isError: pricingError } = usePricingPlans();
+  const proPlan = plans.find(plan => plan.id === 'pro');
+  const freePlan = plans.find(plan => plan.id === 'free');
   const [blobT, setBlobT] = useState(0);
   useEffect(() => {
     let frame;
@@ -298,7 +281,7 @@ export default function Landing() {
           {[
             { value: '9', label: 'Professional ecosystems' },
             { value: '2,400+', label: 'Active professionals' },
-            { value: '$7.99', label: 'Per user per month · Pro' },
+            { value: '3 plans', label: 'Free, Pro, and Pro Annual' },
             { value: '100%', label: 'E2E encrypted workspaces' },
           ].map(s => (
             <div key={s.label} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '24px 20px', textAlign: 'center' }}>
@@ -350,7 +333,7 @@ export default function Landing() {
                 '✓ Post flairs — Discussion, News, Job, Poll, Insight, Resource',
                 '✓ Interactive polls with real-time vote bars',
                 '✓ Karma system — build your professional reputation',
-                '✓ Free users get 3 posts/month · Pro users post unlimited',
+                '✓ Unlimited GP Feed posting on every plan',
                 '✓ Public profiles, comments, upvotes & awards',
               ].map(f => (
                 <div key={f} style={{ fontSize: 14, color: '#7FA8D4', lineHeight: 1.5 }}>{f}</div>
@@ -516,29 +499,26 @@ export default function Landing() {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#6AADFF', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 12 }}>Simple pricing</div>
             <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: '#EEF4FF', letterSpacing: '-1px' }}>The right plan for every team</h2>
-            <p style={{ fontSize: 15, color: '#7FA8D4', marginTop: 10 }}>Start free. Upgrade when you're ready. No per-seat surprises.</p>
+            <p style={{ fontSize: 15, color: '#7FA8D4', marginTop: 10 }}>Start free. Upgrade when you're ready. Clear per-user pricing.</p>
           </div>
+          {(pricingLoading || pricingError || plans.length === 0) && (
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#6B93C4', marginTop: 16 }}>
+              {pricingLoading ? 'Loading pricing…' : 'Pricing is temporarily unavailable.'}
+            </p>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 16 }}>
-            {PLANS.map(plan => (
+            {plans.map(plan => (
               <div key={plan.name} style={{
-                background: plan.highlight ? 'linear-gradient(160deg,rgba(27,110,243,.12),rgba(0,180,216,.06))' : 'rgba(255,255,255,.04)',
-                border: plan.highlight ? '1px solid rgba(27,110,243,.4)' : '1px solid rgba(255,255,255,.07)',
+                background: plan.id === 'pro' ? 'linear-gradient(160deg,rgba(27,110,243,.12),rgba(0,180,216,.06))' : 'rgba(255,255,255,.04)',
+                border: plan.id === 'pro' ? '1px solid rgba(27,110,243,.4)' : '1px solid rgba(255,255,255,.07)',
                 borderRadius: 16, padding: '24px', position: 'relative',
-                boxShadow: plan.highlight ? '0 0 40px rgba(27,110,243,.12)' : 'none',
+                boxShadow: plan.id === 'pro' ? '0 0 40px rgba(27,110,243,.12)' : 'none',
               }}>
-                {plan.badge && (
-                  <div style={{ fontSize: 11, fontWeight: 800, color: plan.highlight ? '#6AADFF' : '#6B93C4', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {(() => {
-                      const BadgeIcon = plan.badge.icon;
-                      return <><BadgeIcon size={12} /> {plan.badge.text}</>
-                    })()}
-                  </div>
-                )}
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#EEF4FF', marginBottom: 8 }}>{plan.name}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: '#EEF4FF', letterSpacing: '-1px' }}>{plan.price}</span>
+                  <span style={{ fontSize: 24, fontWeight: 900, color: '#EEF4FF', letterSpacing: '-1px' }}>{getPlanPriceLabel(plan)}</span>
                 </div>
-                <div style={{ fontSize: 12, color: '#6B93C4', marginBottom: 20 }}>{plan.period}</div>
+                <div style={{ fontSize: 12, color: '#6B93C4', marginBottom: 20 }}>{getPlanBillingDescription(plan)}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
                   {plan.features.map(f => (
                     <div key={f} style={{ fontSize: 13, color: '#7FA8D4', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
@@ -547,19 +527,19 @@ export default function Landing() {
                   ))}
                 </div>
                 <button
-                  onClick={() => plan.ctaAction === 'support' ? window.location.href = '/support' : navigateToLogin()}
+                  onClick={() => ['annual', 'pro_multi', 'annual_multi'].includes(plan.id) ? navigate('/pricing') : navigateToLogin()}
                   style={{
-                    width: '100%', padding: '11px 0', borderRadius: 8, border: plan.highlight ? 'none' : '1px solid rgba(255,255,255,.15)',
-                    background: plan.highlight ? 'linear-gradient(135deg,#1B6EF3,#0D5FDB)' : 'transparent',
+                    width: '100%', padding: '11px 0', borderRadius: 8, border: plan.id === 'pro' ? 'none' : '1px solid rgba(255,255,255,.15)',
+                    background: plan.id === 'pro' ? 'linear-gradient(135deg,#1B6EF3,#0D5FDB)' : 'transparent',
                     color: '#EEF4FF', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                    boxShadow: plan.highlight ? '0 2px 12px rgba(27,110,243,.4)' : 'none',
+                    boxShadow: plan.id === 'pro' ? '0 2px 12px rgba(27,110,243,.4)' : 'none',
                   }}
-                >{plan.cta}</button>
+                >{plan.id === 'pro' ? `Start ${plan.trial_days}-day free trial` : ['annual', 'pro_multi', 'annual_multi'].includes(plan.id) ? 'Choose plan' : 'Get started free'}</button>
               </div>
             ))}
           </div>
           <p style={{ textAlign: 'center', fontSize: 13, color: '#6B93C4', marginTop: 24 }}>
-            All plans include a 14-day free trial · No credit card required · Cancel anytime
+            {proPlan?.trial_days ? `Pro includes a ${proPlan.trial_days}-day free trial · ` : ''}{freePlan ? `${freePlan.name} is ${getPlanPriceLabel(freePlan)} forever` : ''}
           </p>
         </div>
       </section>
@@ -580,7 +560,7 @@ export default function Landing() {
               Talk to sales
             </Link>
           </div>
-          <p style={{ fontSize: 13, color: '#2E4D6E', marginTop: 20 }}>Free forever · Pro from $7.99/user/mo · Enterprise from $14/user/mo</p>
+          <p style={{ fontSize: 13, color: '#2E4D6E', marginTop: 20 }}>Free forever · Pro monthly and annual plans available</p>
         </div>
       </section>
 

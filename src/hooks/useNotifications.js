@@ -17,28 +17,23 @@ export function useNotifications(userEmail) {
       }
     },
     enabled: !!userEmail,
-    refetchInterval: 15000,
   });
 
-  // Real-time subscription for new notifications
   useEffect(() => {
     if (!userEmail) return;
-    
-    if (!socket.connected) {
-      socket.connect();
-    }
-    
-    // Assume backend places user in a personal room for notifications
-    socket.emit('joinNotifications', userEmail);
 
-    const handleNewNotification = () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+    const handleNewNotification = (notification) => {
+      if (!notification?.id || notification.recipient_email !== userEmail) return;
+      queryClient.setQueryData(['notifications', userEmail], currentNotifications => [
+        notification,
+        ...(currentNotifications || []).filter(item => item.id !== notification.id),
+      ].slice(0, 50));
     };
 
-    socket.on('newNotification', handleNewNotification);
+    socket.on('new_notification', handleNewNotification);
 
     return () => {
-      socket.off('newNotification', handleNewNotification);
+      socket.off('new_notification', handleNewNotification);
     };
   }, [userEmail, queryClient]);
 

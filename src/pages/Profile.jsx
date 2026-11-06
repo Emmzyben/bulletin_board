@@ -6,7 +6,7 @@ import { getEcosystem, getKarmaLevel } from '@/lib/ecosystems';
 import PostCard from '../components/feed/PostCard';
 import { toast } from 'sonner';
 import { FileText, BarChart3, MessageSquare, Bookmark, Camera, Settings, AlertTriangle } from 'lucide-react';
-import { pinata } from '@/lib/pinata';
+import { uploadFile } from '@/lib/upload';
 import { useAuth } from '@/lib/AuthContext';
 
 const S = {
@@ -56,22 +56,15 @@ export default function Profile() {
     setUploadingCover(true);
     
     try {
-      const { url } = await api.get('/upload/presigned_url');
-      const upload = await pinata.upload.public.file(file).url(url);
+      const data = await uploadFile(file);
+      await api.put('/users/profile', { cover_url: data.url });
       
-      if (!upload.cid) {
-        throw new Error('Upload failed: No CID returned');
-      }
-
-      const publicUrl = await pinata.gateways.public.convert(upload.cid);
-      await api.put('/users/profile', { cover_url: publicUrl });
-      
-      setCoverUrl(publicUrl);
+      setCoverUrl(data.url);
       setUploadingCover(false);
       setAdjusting(true); // enter adjust mode after upload
     } catch (error) {
       console.error('Error uploading cover:', error);
-      toast.error('Failed to upload cover image');
+      toast.error(error.message || 'Failed to upload cover image');
       setUploadingCover(false);
     }
   };
@@ -87,19 +80,14 @@ export default function Profile() {
 
     setUploadingAvatar(true);
     try {
-      const { url } = await api.get('/upload/presigned_url');
-      const upload = await pinata.upload.public.file(file).url(url);
-
-      if (!upload.cid) throw new Error('Upload failed');
-
-      const publicUrl = await pinata.gateways.public.convert(upload.cid);
-      await api.put('/users/profile', { avatar_url: publicUrl });
-      setAvatarUrl(publicUrl);
+      const data = await uploadFile(file);
+      await api.put('/users/profile', { avatar_url: data.url });
+      setAvatarUrl(data.url);
       await refreshUser(); // sync global user context so TopNav updates
       toast.success('Profile photo updated!');
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast.error('Failed to upload profile photo');
+      toast.error(error.message || 'Failed to upload profile photo');
     } finally {
       setUploadingAvatar(false);
     }
@@ -144,6 +132,7 @@ export default function Profile() {
   };
   const eco = user?.primary_ecosystem ? getEcosystem(user.primary_ecosystem) : null;
   const karma = getKarmaLevel(user?.karma || 0);
+  const KarmaLevelIcon = typeof karma?.icon === 'function' ? karma.icon : null;
   const initials = user?.full_name ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
   const { data: userPosts = [] } = useQuery({
@@ -324,7 +313,7 @@ export default function Profile() {
                 </span>
               )}
               <span style={{ background: `${karma.color || 'rgba(124,77,255,.1)'}`, border: '1px solid rgba(124,77,255,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#B39DDB', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <karma.icon size={14} /> {karma.level}
+                {KarmaLevelIcon ? <KarmaLevelIcon size={14} /> : null} {karma.level}
               </span>
             </div>
 

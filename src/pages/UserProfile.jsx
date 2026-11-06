@@ -21,7 +21,8 @@ export default function UserProfile() {
   const { user: currentUser } = useAuth();
   const isDark = theme === 'dark';
   const params = new URLSearchParams(window.location.search);
-  const authorEmail = params.get('email');
+  const userIdParam = params.get('userId') ?? params.get('email');
+  const authorEmail = userIdParam || currentUser?.email || '';
   const isOwnProfile = currentUser?.email === authorEmail;
   const [activeTab, setActiveTab] = useState('posts');
   const [activeEcosystem, setActiveEcosystem] = useState(null);
@@ -103,6 +104,8 @@ export default function UserProfile() {
   const isLoading = loadingUser || loadingPosts;
   const eco = profileUser?.primary_ecosystem ? getEcosystem(profileUser.primary_ecosystem) : null;
   const karma = getKarmaLevel(profileUser?.karma || 0);
+  const KarmaIcon = typeof karma?.icon === 'function' ? karma.icon : null;
+  const EcoIcon = typeof eco?.icon === 'function' ? eco.icon : null;
   const initials = profileUser?.full_name
     ? profileUser.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : (authorEmail?.[0] || 'U').toUpperCase();
@@ -193,7 +196,7 @@ export default function UserProfile() {
                         }
                       }}
                       disabled={isProcessingFollow}
-                      style={{ padding: '8px 18px', borderRadius: 20, border: 'none', background: followed ? (isDark ? 'rgba(27,110,243,.2)' : '#E0E7FF') : 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: followed ? (isDark ? '#fff' : '#1E40AF') : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: followed ? 'none' : '0 2px 12px rgba(27,110,243,.4)', border: followed ? `1px solid ${isDark ? 'rgba(27,110,243,.4)' : '#C7D2FE'}` : 'none', opacity: isProcessingFollow ? 0.7 : 1 }}
+                      style={{ padding: '8px 18px', borderRadius: 20, border: followed ? `1px solid ${isDark ? 'rgba(27,110,243,.4)' : '#C7D2FE'}` : 'none', background: followed ? (isDark ? 'rgba(27,110,243,.2)' : '#E0E7FF') : 'linear-gradient(135deg,#1B6EF3,#0D5FDB)', color: followed ? (isDark ? '#fff' : '#1E40AF') : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: followed ? 'none' : '0 2px 12px rgba(27,110,243,.4)', opacity: isProcessingFollow ? 0.7 : 1 }}
                     >
                       {followed ? '✓ Following' : '+ Follow'}
                     </button>
@@ -245,7 +248,7 @@ export default function UserProfile() {
                     <p style={{ fontSize: 13, color: textMuted }}>@{authorEmail?.split('@')[0]}</p>
                   </div>
                   <span style={{ background: 'rgba(124,77,255,.12)', border: '1px solid rgba(124,77,255,.3)', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, color: '#B39DDB', whiteSpace: 'nowrap' }}>
-                    {karma.icon && <karma.icon size={14} style={{ marginRight: 4 }} />} {karma.level}
+                    {KarmaIcon && <KarmaIcon size={14} style={{ marginRight: 4 }} />} {karma.level}
                   </span>
                 </div>
 
@@ -261,11 +264,11 @@ export default function UserProfile() {
                       <Calendar size={11} /> Joined {format(new Date(profileUser.created_at), 'MMMM yyyy')}
                     </span>
                   )}
-                  {eco && (() => { const EcoIcon = eco.icon; return (
+                  {eco && EcoIcon && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(27,110,243,.1)', border: '1px solid rgba(27,110,243,.25)', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#6AADFF' }}>
                       <EcoIcon size={12} /> {eco.label}
                     </span>
-                  ); })()}
+                  )}
                   {profileUser?.company && (
                     <span style={{ background: isDark ? 'rgba(255,255,255,.05)' : '#F1F5F9', border: `1px solid ${cardBorder}`, borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600, color: textSecondary }}>
                       🏢 {profileUser.company}
@@ -336,20 +339,23 @@ export default function UserProfile() {
                     >
                       All ({userPosts.length})
                     </button>
-                    {activeEcosystems.map(e => (
-                      <button
-                        key={e.id}
-                        onClick={() => setActiveEcosystem(activeEcosystem === e.id ? null : e.id)}
-                        style={{
-                          padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', transition: '.15s',
-                          background: activeEcosystem === e.id ? '#1B6EF3' : (isDark ? 'rgba(255,255,255,.05)' : '#F1F5F9'),
-                          borderColor: activeEcosystem === e.id ? '#1B6EF3' : cardBorder,
-                          color: activeEcosystem === e.id ? '#fff' : textSecondary,
-                        }}
-                      >
-                        {e.icon} {e.label} ({ecosystemCounts[e.id]})
-                      </button>
-                    ))}
+                    {activeEcosystems.map(e => {
+                      const EcosystemButtonIcon = e.icon;
+                      return (
+                        <button
+                          key={e.id}
+                          onClick={() => setActiveEcosystem(activeEcosystem === e.id ? null : e.id)}
+                          style={{
+                            padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1px solid', transition: '.15s',
+                            background: activeEcosystem === e.id ? '#1B6EF3' : (isDark ? 'rgba(255,255,255,.05)' : '#F1F5F9'),
+                            borderColor: activeEcosystem === e.id ? '#1B6EF3' : cardBorder,
+                            color: activeEcosystem === e.id ? '#fff' : textSecondary,
+                          }}
+                        >
+                          {EcosystemButtonIcon ? <EcosystemButtonIcon size={12} style={{ marginRight: 4 }} /> : null} {e.label} ({ecosystemCounts[e.id]})
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 

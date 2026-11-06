@@ -13,5 +13,12 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/file_upload_api': {
+        target: 'https://crystalsbusinesssolution.com',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   }
 });

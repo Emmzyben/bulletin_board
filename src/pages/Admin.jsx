@@ -6,7 +6,6 @@ import {
   Loader2,
   LayoutDashboard,
   TrendingUp,
-  Users,
   ShieldCheck,
   Receipt,
   Briefcase,
@@ -14,17 +13,9 @@ import {
   CreditCard,
   LockKeyhole,
   Ban,
-  AlertTriangle,
-  ClipboardList,
-  Lock,
-  CheckCircle2,
 } from 'lucide-react';
-import BillingTab from '../components/admin/BillingTab';
 import AdminOverviewTab from '../components/admin/AdminOverviewTab';
-import OrdersTab from '../components/admin/OrdersTab';
-import SalesTab from '../components/admin/SalesTab';
 import UsersAdminTab from '../components/admin/UsersAdminTab';
-import UserManagement from '../components/admin/UserManagement';
 import WorkspaceAnalytics from '../components/admin/WorkspaceAnalytics';
 import ContentModeration from '../components/admin/ContentModeration';
 
@@ -35,7 +26,6 @@ const S = {
 const TABS = [
   { id: 'overview',            label: 'Overview',        Icon: LayoutDashboard },
   { id: 'workspace-analytics', label: 'Analytics',       Icon: TrendingUp },
-  { id: 'user-management',     label: 'User Management', Icon: Users },
   { id: 'moderation',          label: 'Moderation',      Icon: ShieldCheck },
   { id: 'orders',              label: 'Orders',          Icon: Receipt },
   { id: 'sales',               label: 'Sales',           Icon: Briefcase },
@@ -47,35 +37,13 @@ export default function Admin() {
   const { user, navigateToLogin } = useOutletContext();
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: workspaces = [], isLoading } = useQuery({
+  const { data: workspaces = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['workspaces', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      try {
-        const data = await api.get('/workspaces');
-        return data || [];
-      } catch (err) {
-        return [];
-      }
-    },
-    enabled: !!user?.email,
+    queryFn: () => api.get('/workspaces'),
+    enabled: !!user?.email && activeTab === 'workspace-analytics',
   });
 
   const workspace = workspaces[0];
-
-  const { data: b2bSpaces = [] } = useQuery({
-    queryKey: ['b2bSpaces', workspace?.id],
-    queryFn: async () => {
-      if (!workspace?.id) return [];
-      try {
-        const data = await api.get(`/b2b?workspace_id=${workspace.id}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
-    },
-    enabled: !!workspace?.id,
-  });
 
   // Auth guards
   if (!user) return (
@@ -97,13 +65,18 @@ export default function Admin() {
     </div>
   );
 
-  if (isLoading) return (
+  if (activeTab === 'workspace-analytics' && isLoading) return (
     <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <Loader2 style={{ width: 28, height: 28, color: '#6B93C4' }} className="animate-spin" />
     </div>
   );
 
-  const members = workspace?.members || [{ email: user?.email, role: 'owner', status: 'active' }];
+  if (activeTab === 'workspace-analytics' && isError) return (
+    <div role="alert" style={{ ...S.page, padding: 32, color: '#EF8A80' }}>
+      Could not load workspace analytics: {error.message}
+      <button onClick={() => refetch()} style={{ display: 'block', marginTop: 12, background: 'none', border: 0, color: '#6AADFF', cursor: 'pointer' }}>Retry</button>
+    </div>
+  );
 
   return (
     <div style={S.page}>
@@ -113,22 +86,9 @@ export default function Admin() {
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', color: '#EEF4FF', marginBottom: 4 }}>Admin Control Center</h1>
             <div style={{ fontSize: 13, color: '#6B93C4', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>{workspace?.name || 'Platform Admin'}</span>
+              <span>{user.email}</span>
               <span style={{ color: '#2E4D6E' }}>·</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00C853', display: 'inline-block', boxShadow: '0 0 5px #00C853' }} />
-                Live
-              </span>
-              <span style={{ color: '#2E4D6E' }}>·</span>
-              <span style={{ fontSize: 11, background: 'rgba(124,77,255,.15)', border: '1px solid rgba(124,77,255,.3)', borderRadius: 5, padding: '1px 8px', color: '#B39DDB', fontWeight: 700 }}>Super Admin</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(0,200,83,.08)', border: '1px solid rgba(0,200,83,.2)', fontSize: 12, color: '#00C853', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CheckCircle2 style={{ width: 13, height: 13 }} /> 82% Self-Serve
-            </div>
-            <div style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(239,83,80,.08)', border: '1px solid rgba(239,83,80,.2)', fontSize: 12, color: '#EF5350', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <AlertTriangle style={{ width: 13, height: 13 }} /> 7 Failed Payments
+              <span style={{ fontSize: 11, background: 'rgba(124,77,255,.15)', border: '1px solid rgba(124,77,255,.3)', borderRadius: 5, padding: '1px 8px', color: '#B39DDB', fontWeight: 700 }}>Administrator</span>
             </div>
           </div>
         </div>
@@ -150,32 +110,20 @@ export default function Admin() {
         </div>
 
         {activeTab === 'overview' && <AdminOverviewTab />}
-        {activeTab === 'workspace-analytics' && <WorkspaceAnalytics workspace={workspace} />}
-        {activeTab === 'user-management' && <UserManagement workspace={workspace} />}
+        {activeTab === 'workspace-analytics' && (workspace
+          ? <WorkspaceAnalytics workspace={workspace} />
+          : <div style={{ padding: 24, color: '#6B93C4' }}>No workspace is available for this account.</div>)}
         {activeTab === 'moderation' && <ContentModeration workspace={workspace} />}
-        {activeTab === 'orders' && <OrdersTab />}
-        {activeTab === 'sales' && <SalesTab />}
         {activeTab === 'users' && <UsersAdminTab currentUser={user} />}
-        {activeTab === 'billing' && <BillingTab members={members} b2bSpaces={b2bSpaces} />}
-        {activeTab !== 'overview' && activeTab !== 'workspace-analytics' && activeTab !== 'user-management' && activeTab !== 'moderation' && activeTab !== 'orders' && activeTab !== 'sales' && activeTab !== 'users' && activeTab !== 'billing' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { Icon: LockKeyhole, title: 'Require 2FA',     desc: 'Enforce two-factor authentication for all members',      action: 'Enable',    color: '#1B6EF3' },
-              { Icon: ClipboardList, title: 'Login History', desc: 'View recent login activity across all members',           action: 'View',      color: '#00B4D8' },
-              { Icon: ShieldCheck,  title: 'Security Audit', desc: 'Run a comprehensive security check on your workspace',   action: 'Run Audit', color: '#7C4DFF' },
-              { Icon: Lock,         title: 'SSO / SAML',     desc: 'Enable single sign-on for enterprise authentication',    action: 'Upgrade',   color: '#FF8F00' },
-            ].map(s => (
-              <div key={s.title} style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <s.Icon style={{ width: 24, height: 24, color: s.color, flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 2 }}>{s.title}</div>
-                    <div style={{ fontSize: 13, color: '#6B93C4' }}>{s.desc}</div>
-                  </div>
-                </div>
-                <button style={{ padding: '8px 18px', borderRadius: 8, border: `1px solid ${s.color}44`, background: `${s.color}18`, color: s.color, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{s.action}</button>
-              </div>
-            ))}
+        {['orders', 'sales', 'billing'].includes(activeTab) && (
+          <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 14, padding: 24 }}>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#EEF4FF', marginBottom: 8 }}>
+              {activeTab === 'orders' ? 'Orders' : activeTab === 'sales' ? 'Sales' : 'Billing'} is not connected yet
+            </h2>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: '#8AAACD' }}>
+              This workspace does not yet have an order, sales pipeline, or payment provider connected. No sample financial data or pretend actions are shown here.
+              Connect and configure a billing provider and define the associated workflows before enabling this section.
+            </p>
           </div>
         )}
 

@@ -1,33 +1,34 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api';
 
-export function useSubscription() {
-  const { data, isLoading } = useQuery({
+export function useSubscription(enabled = true) {
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['subscription'],
     queryFn: async () => {
       try {
-        const data = await api.get('/subscription/check-trial-upgrade');
-        // If the edge function isn't deployed or returns an error, fail gracefully
-        if (error) {
-          console.warn('Subscription check unavailable, defaulting to trial active:', error.message);
-          return { plan: 'free', trial_active: true, days_left: 14 };
-        }
-        return data;
+        return await api.get('/subscription/check-trial-upgrade');
       } catch (err) {
-        console.warn('Subscription check failed, defaulting to trial active:', err.message);
-        return { plan: 'free', trial_active: true, days_left: 14 };
+        console.error('Subscription check failed:', err.message);
+        throw err;
       }
     },
-    refetchInterval: 60000, // Check every minute
-    retry: false, // Don't retry on failure
-    enabled: true,
+    refetchInterval: 60000,
+    retry: false,
+    enabled,
   });
 
   return {
     plan: data?.plan || 'free',
-    trialActive: data?.trial_active ?? true, // Default to true so features are accessible
-    daysLeft: data?.days_left || 14,
-    isPro: data?.plan === 'pro',
+    trialActive: data?.trial_active ?? false,
+    daysLeft: data?.days_left ?? 0,
+    seatCount: data?.seat_count ?? 1,
+    seatsUsed: data?.seats_used ?? 0,
+    workspaceCount: data?.workspace_count ?? 0,
+    maxWorkspaces: data?.max_workspaces ?? 1,
+    workspaces: data?.workspaces ?? [],
+    hasWorkspaceAccess: data?.workspace_access ?? false,
+    isPro: ['pro', 'annual', 'pro_multi', 'annual_multi'].includes(data?.plan || 'free'),
     isLoading,
+    isError,
   };
 }

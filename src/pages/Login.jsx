@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,11 @@ import { Loader2, ArrowLeft, Mail, Lock, Github, Chrome } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
+  const inviteEmail = searchParams.get('email') || '';
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const { signIn } = useAuth();
 
@@ -23,7 +26,7 @@ export default function Login() {
     try {
       await signIn(email, password);
       toast.success('Welcome back!');
-      navigate('/');
+      navigate(redirectTo?.startsWith('/') && !redirectTo.startsWith('//') ? redirectTo : '/');
     } catch (error) {
       toast.error(error.message || 'Failed to sign in');
     }
@@ -122,7 +125,10 @@ export default function Login() {
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-slate-400">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-primary hover:underline font-medium">Get Started</Link>
+              <Link
+                to={`/signup${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}&email=${encodeURIComponent(inviteEmail)}` : ''}`}
+                className="text-primary hover:underline font-medium"
+              >Get Started</Link>
             </div>
           </CardFooter>
         </Card>

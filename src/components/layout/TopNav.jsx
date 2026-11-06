@@ -9,11 +9,13 @@ import { useAuth } from '@/lib/AuthContext';
 import NotificationBell from './NotificationBell';
 import GlobalSearch from './GlobalSearch';
 import { useTheme } from '@/lib/ThemeContext';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function TopNav({ user, onCreatePost, onMobileMenuToggle, mobileMenuOpen }) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { logout, navigateToLogin } = useAuth();
+  const { plan } = useSubscription(Boolean(user));
   const displayName = user?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || 'U';
   const isDark = theme === 'dark';
@@ -23,7 +25,7 @@ export default function TopNav({ user, onCreatePost, onMobileMenuToggle, mobileM
     { to: '/', label: 'Feed', exact: true },
     { to: '/communities', label: 'Communities', exact: true },
     { to: '/workspace', label: 'Workspace', exact: false },
-    { to: '/pricing', label: 'Pricing', exact: true },
+    { to: user ? '/billing' : '/pricing', label: user ? 'My plan' : 'Pricing', exact: true },
   ];
 
   const isActive = (link) => link.exact ? location.pathname === link.to : location.pathname.startsWith(link.to);
@@ -39,7 +41,7 @@ export default function TopNav({ user, onCreatePost, onMobileMenuToggle, mobileM
       <div style={{ width: 140, height: 56, display: 'flex', alignItems: 'center', paddingLeft: 12, flexShrink: 0 }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
           <img
-            src="https://media.base44.com/images/public/69ebbbf6d42430b1fdaa3ecc/9fdf31f26_bbs_logo2.png"
+            src="/bbs_logo_solid.png"
             alt="Bulletin Board"
             style={{ height: 72, width: 'auto', filter: 'drop-shadow(0 2px 8px rgba(27,110,243,.4))' }}
           />

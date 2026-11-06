@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, socket } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import WorkspaceSidebar from '../components/workspace/WorkspaceSidebar';
 import MessageArea from '../components/workspace/MessageArea';
 import B2BInviteModal from '../components/workspace/B2BInviteModal';
+import B2BAccessDialog from '../components/workspace/B2BAccessDialog';
+import WorkspaceSearchModal from '../components/workspace/WorkspaceSearchModal';
+import StatusModal from '../components/workspace/StatusModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,13 +18,37 @@ import { ECOSYSTEMS } from '@/lib/ecosystems';
 import { toast } from 'sonner';
 import { sendWorkspaceInviteEmail, sendB2BInviteEmail } from '@/hooks/email';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserProfiles } from '@/hooks/useUserProfiles';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSubscription } from '@/hooks/useSubscription';
+
+const parseMembers = (workspace, fallbackEmail) => {
+  if (Array.isArray(workspace?.members)) return workspace.members;
+  if (typeof workspace?.members === 'string') {
+    try {
+      const parsed = JSON.parse(workspace.members);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+  }
+  return fallbackEmail ? [{ email: fallbackEmail, role: 'owner', status: 'active' }] : [];
+};
 
 export default function Workspace() {
+  const navigate = useNavigate();
   const { user, navigateToLogin } = useAuth();
+  const {
+    hasWorkspaceAccess,
+    isLoading: loadingSubscription,
+    isError: subscriptionError,
+    workspaceCount,
+    maxWorkspaces,
+  } = useSubscription(Boolean(user));
   const queryClient = useQueryClient();
   const [activeChannelId, setActiveChannelId] = useState(null);
   const [activeDm, setActiveDm] = useState(null);
   const [showB2B, setShowB2B] = useState(false);
+  const [respondingB2BInvite, setRespondingB2BInvite] = useState(null);
+  const [managingB2BAccess, setManagingB2BAccess] = useState(null);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -28,7 +56,22 @@ export default function Workspace() {
   const [creatingWorkspace, setCreatingWorkspace] = useState(false);
   const [newWsName, setNewWsName] = useState('');
   const [newWsEco, setNewWsEco] = useState('');
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
+  const [showCreateWorkspaceForm, setShowCreateWorkspaceForm] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchModalOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const { data: allWorkspaces = [], isLoading: loadingWs } = useQuery({
     queryKey: ['workspaces', user?.email],
@@ -42,10 +85,23 @@ export default function Workspace() {
         return [];
       }
     },
-    enabled: !!user?.email,
+    enabled: !!user?.email && hasWorkspaceAccess,
   });
 
-  const workspace = allWorkspaces[0];
+  useEffect(() => {
+    if (allWorkspaces.length && !allWorkspaces.some(item => item.id === selectedWorkspaceId)) {
+      setSelectedWorkspaceId(allWorkspaces[0].id);
+    }
+  }, [allWorkspaces, selectedWorkspaceId]);
+
+  const workspace = allWorkspaces.find(item => item.id === selectedWorkspaceId) || allWorkspaces[0];
+  const members = parseMembers(workspace, user?.email);
+  const userProfiles = useUserProfiles([...members.map(member => member.email), user?.email]);
+  const isOwner = workspace?.owner_email?.toLowerCase() === user?.email?.toLowerCase();
+  const currentMembership = members.find(member => member.email?.toLowerCase() === user?.email?.toLowerCase());
+  const isSubAdmin = !isOwner && currentMembership?.role === 'subadmin' &&
+    !['invited', 'removed', 'deactivated', 'inactive'].includes(currentMembership.status);
+  const canManageMembers = isOwner || isSubAdmin;
 
   const { data: b2bSpaces = [] } = useQuery({
     queryKey: ['b2bSpaces', workspace?.id],
@@ -105,11 +161,15 @@ export default function Workspace() {
   useEffect(() => {
     if (!workspace?.id) return;
 
-    const handleWsUpdate = () => queryClient.invalidateQueries({ queryKey: ['workspaces', user?.email] });
+    const handleWsUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['workspaces', user?.email] });
+      queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
+    };
     const handleChUpdate = () => queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
     const handleB2bUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ['b2bSpaces', workspace.id] });
       queryClient.invalidateQueries({ queryKey: ['incomingB2BRequests', user?.email] });
+      queryClient.invalidateQueries({ queryKey: ['channels', workspace.id] });
     };
 
     socket.on(`workspace_update_${user?.email}`, handleWsUpdate);
@@ -131,6 +191,12 @@ export default function Workspace() {
     }
   }, [channels, activeChannelId, isMobile]);
 
+  useEffect(() => {
+    if (activeChannelId && !channels.some(channel => channel.id === activeChannelId)) {
+      setActiveChannelId(null);
+    }
+  }, [channels, activeChannelId]);
+
   const activeChannel = channels.find(c => c.id === activeChannelId);
 
   const handleCreateWorkspace = async () => {
@@ -138,41 +204,52 @@ export default function Workspace() {
     setCreatingWorkspace(true);
 
     try {
-      await api.post('/workspaces', {
+      const createdWorkspace = await api.post('/workspaces', {
         name: newWsName,
         ecosystem: newWsEco,
         member_count: 1,
         plan: 'free',
         members: [{ email: user?.email, role: 'owner', status: 'active' }],
       });
+      if (createdWorkspace?.id) {
+        queryClient.setQueryData(['workspaces', user?.email], current => [
+          ...(current || []).filter(item => item.id !== createdWorkspace.id),
+          createdWorkspace,
+        ]);
+        setSelectedWorkspaceId(createdWorkspace.id);
+      }
       queryClient.invalidateQueries({ queryKey: ['workspaces', user?.email] });
+      setShowCreateWorkspaceForm(false);
       setCreatingWorkspace(false);
       setNewWsName('');
       setNewWsEco('');
     } catch (error) {
-      if (error.response?.status === 409 || error.message?.includes('conflict')) {
-        toast.error('You already have a workspace. You can only own one workspace at a time.');
-      } else {
-        toast.error('Failed to create workspace: ' + (error.message || 'Unknown error'));
-      }
+      toast.error(error.message || 'Failed to create workspace');
       setCreatingWorkspace(false);
     }
   };
 
-  const isOwner = workspace?.owner_email === user?.email;
-
   const handleRemoveMember = async (memberEmail) => {
     if (!window.confirm(`Remove ${memberEmail} from the workspace?`)) return;
-    const rawMbrs = workspace.members;
-    const currentMembers = Array.isArray(rawMbrs) ? rawMbrs : (typeof rawMbrs === 'string' ? JSON.parse(rawMbrs) : []);
-
-    const newMembers = currentMembers.filter(m => m.email !== memberEmail);
     try {
-      await api.put(`/workspaces/${workspace.id}/members`, { members: newMembers });
+      await api.delete(`/workspaces/${workspace.id}/members/${encodeURIComponent(memberEmail)}`);
       queryClient.invalidateQueries({ queryKey: ['workspaces', user?.email] });
       toast.success(`${memberEmail} removed from workspace`);
     } catch (error) {
-      toast.error('Failed to remove member');
+      toast.error(error.message || 'Failed to remove member');
+    }
+  };
+
+  const handleMemberRoleChange = async (memberEmail, role) => {
+    const updatedMembers = members.map(member =>
+      member.email?.toLowerCase() === memberEmail.toLowerCase() ? { ...member, role } : member
+    );
+    try {
+      await api.put(`/workspaces/${workspace.id}/members`, { members: updatedMembers });
+      queryClient.invalidateQueries({ queryKey: ['workspaces', user?.email] });
+      toast.success(`${memberEmail} is now ${role === 'subadmin' ? 'a sub-admin' : 'a member'}`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to update member role');
     }
   };
 
@@ -189,17 +266,34 @@ export default function Workspace() {
     }
   };
 
-  const handleAcceptB2BInvite = async (space) => {
+  const handleDeleteB2BInvite = async (space) => {
+    if (!window.confirm(`Delete the pending invitation to ${space.company_name}?`)) return;
     try {
-      await api.put(`/b2b/${space.id}/status`, { status: 'active' });
+      await api.delete(`/b2b/${space.id}`);
+      queryClient.invalidateQueries({ queryKey: ['b2bSpaces', workspace?.id] });
       queryClient.invalidateQueries({ queryKey: ['incomingB2BRequests'] });
-      queryClient.invalidateQueries({ queryKey: ['b2bSpaces'] });
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-      toast.success('Invite accepted! You now have access to the shared channels.');
+      toast.success(`Pending invitation to ${space.company_name} deleted`);
     } catch (error) {
-      toast.error('Failed to accept invite');
+      toast.error(error.message || 'Failed to delete B2B invitation');
     }
   };
+
+  const handleEndB2BPartnership = async (space) => {
+    if (!window.confirm(`End the B2B partnership with ${space.company_name}? Shared channel access will be revoked.`)) return;
+    try {
+      await api.put(`/b2b/${space.id}/end`, {});
+      queryClient.invalidateQueries({ queryKey: ['b2bSpaces'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['incomingB2BRequests'] });
+      toast.success(`B2B partnership with ${space.company_name} ended`);
+    } catch (error) {
+      let message = error.message || 'Failed to end B2B partnership';
+      try { message = JSON.parse(message).error || message; } catch {}
+      toast.error(message);
+    }
+  };
+
+  const handleAcceptB2BInvite = space => setRespondingB2BInvite(space);
 
   if (loadingWs) {
     return (
@@ -215,9 +309,45 @@ export default function Workspace() {
         <Card className="p-8 max-w-md w-full text-center">
           <Building2 className="w-12 h-12 text-primary mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Members Only</h2>
-          <p className="text-sm text-muted-foreground mb-6">Sign in or create a free account to access your workspace and collaborate with your team.</p>
+          <p className="text-sm text-muted-foreground mb-6">Sign in or create a free account to join the community. Private workspace access is included with Pro.</p>
           <Button className="w-full gap-2" onClick={() => navigateToLogin()}>
             <LogIn className="w-4 h-4" /> Sign In / Join Free
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loadingSubscription) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (subscriptionError) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)] p-4">
+        <Card className="p-8 max-w-md w-full text-center">
+          <h2 className="text-xl font-bold mb-2">Could not verify workspace access</h2>
+          <p className="text-sm text-muted-foreground">Please refresh and try again.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!hasWorkspaceAccess) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-3.5rem)] p-4">
+        <Card className="p-8 max-w-md w-full text-center">
+          <Building2 className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Private workspaces are a Pro feature</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Your Free plan includes unlimited GP Feed posting, browsing, comments, and a public profile. Upgrade to Pro to create or join private workspaces.
+          </p>
+          <Button className="w-full" onClick={() => navigate('/pricing')}>
+            View Pro plans
           </Button>
         </Card>
       </div>
@@ -233,7 +363,7 @@ export default function Workspace() {
             <h2 className="text-lg font-bold mb-3 flex items-center gap-2 text-[#00B4D8]">
               <Building2 className="w-5 h-5" /> Pending B2B Invitations
             </h2>
-            <p className="text-sm text-muted-foreground mb-4">You have been invited to collaborate. Accept to join their shared channels.</p>
+            <p className="text-sm text-muted-foreground mb-4">Create a workspace first, then return here to choose which of your members can access shared channels.</p>
             <div className="space-y-3">
               {incomingB2BRequests.map(space => (
                 <div key={space.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/50">
@@ -241,15 +371,12 @@ export default function Workspace() {
                     <div className="font-semibold text-sm truncate">{space.company_name}</div>
                     <div className="text-xs text-muted-foreground truncate">Role: {space.relationship_type || 'Partner'}</div>
                   </div>
-                  <Button size="sm" onClick={() => handleAcceptB2BInvite(space)} className="bg-[#00B4D8] hover:bg-[#00B4D8]/90 text-white shrink-0">
-                    Accept
+                  <Button size="sm" disabled className="shrink-0">
+                    Create workspace first
                   </Button>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mt-4 opacity-70">
-              💡 You can accept a B2B invite <strong>or</strong> create your own workspace below — or both!
-            </p>
           </Card>
         )}
 
@@ -293,13 +420,6 @@ export default function Workspace() {
     );
   }
 
-  const rawMembers = workspace.members;
-  const members = Array.isArray(rawMembers)
-    ? rawMembers
-    : typeof rawMembers === 'string'
-      ? (() => { try { return JSON.parse(rawMembers); } catch { return []; } })()
-      : [{ email: user?.email, role: 'owner', status: 'active' }];
-
   const initGrad = [
     'linear-gradient(135deg,#7C4DFF,#1B6EF3)',
     'linear-gradient(135deg,#1B6EF3,#00B4D8)',
@@ -335,10 +455,55 @@ export default function Workspace() {
         </div>
       )}
 
+      {(allWorkspaces.length > 1 ||
+        (workspace.owner_email?.toLowerCase() === user?.email?.toLowerCase() && workspaceCount < maxWorkspaces)) && (
+        <div className="flex items-center gap-2 border-b px-3 py-2">
+          {allWorkspaces.length > 1 && (
+            <Select value={workspace.id} onValueChange={id => {
+              setSelectedWorkspaceId(id);
+              setActiveChannelId(null);
+              setActiveDm(null);
+            }}>
+              <SelectTrigger aria-label="Select workspace" className="w-56">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allWorkspaces.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          {workspace.owner_email?.toLowerCase() === user?.email?.toLowerCase() &&
+            workspaceCount < maxWorkspaces && (
+              <Button size="sm" onClick={() => setShowCreateWorkspaceForm(value => !value)}>
+                {showCreateWorkspaceForm ? 'Cancel' : 'New workspace'}
+              </Button>
+            )}
+        </div>
+      )}
+      {showCreateWorkspaceForm && (
+          <Card className="mx-3 my-2 w-80 space-y-3 p-4">
+            <h2 className="font-semibold">Create another workspace</h2>
+            <Input value={newWsName} onChange={event => setNewWsName(event.target.value)} placeholder="Workspace name" />
+            <Select value={newWsEco} onValueChange={setNewWsEco}>
+              <SelectTrigger><SelectValue placeholder="Choose ecosystem" /></SelectTrigger>
+              <SelectContent>
+                {ECOSYSTEMS.map(item => {
+                  const EcoIcon = item.icon;
+                  return <SelectItem key={item.id} value={item.id}><span className="flex items-center gap-2"><EcoIcon size={14} />{item.label}</span></SelectItem>;
+                })}
+              </SelectContent>
+            </Select>
+            <Button className="w-full" onClick={handleCreateWorkspace} disabled={!newWsName || !newWsEco || creatingWorkspace}>
+              {creatingWorkspace ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Create workspace
+            </Button>
+          </Card>
+      )}
       <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <div style={{ width: isMobile ? '100%' : 224, flexShrink: 0, display: isMobile && (activeChannelId || activeDm) ? 'none' : 'block' }}>
           <WorkspaceSidebar
             workspace={workspace}
+            userProfiles={userProfiles}
             channels={channels}
             activeChannelId={activeChannelId}
             setActiveChannelId={setActiveChannelId}
@@ -347,7 +512,12 @@ export default function Workspace() {
             b2bSpaces={b2bSpaces}
             onB2BClick={() => setShowB2B(true)}
             onResendB2BInvite={handleResendB2BInvite}
+            onDeleteB2BInvite={handleDeleteB2BInvite}
+            onManageB2BAccess={setManagingB2BAccess}
+            onEndB2BPartnership={handleEndB2BPartnership}
             user={user}
+            onOpenSearch={() => setSearchModalOpen(true)}
+            onOpenStatus={() => setStatusModalOpen(true)}
           />
         </div>
         <MessageArea
@@ -356,6 +526,7 @@ export default function Workspace() {
           activeDm={activeDm}
           workspaceId={activeChannel?.workspace_id || workspace.id}
           user={user}
+          members={members}
           isMobile={isMobile}
           onBack={() => { setActiveChannelId(null); setActiveDm(null); }}
         />
@@ -377,27 +548,49 @@ export default function Workspace() {
             {members.map((m, i) => {
               const initials = m.email ? m.email.slice(0, 2).toUpperCase() : '??';
               const isYou = m.email === user?.email;
-              const roleBadgeColor = m.role === 'owner' ? '#7C4DFF' : m.status === 'invited' ? '#FF8F00' : '#1B6EF3';
-              const roleLabel = m.role === 'owner' ? 'Owner' : m.status === 'invited' ? 'Invited' : 'Member';
+              const isWorkspaceAdmin = m.email?.toLowerCase() === workspace?.owner_email?.toLowerCase();
+              const isSubAdminMember = m.role === 'subadmin';
+              const roleBadgeColor = isWorkspaceAdmin ? '#7C4DFF' : isSubAdminMember ? '#00B4D8' : m.status === 'invited' ? '#FF8F00' : '#1B6EF3';
+              const roleLabel = isWorkspaceAdmin ? 'Admin' : m.status === 'invited' ? 'Invited' : isSubAdminMember ? 'Sub-admin' : 'Member';
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 16px', cursor: 'default', borderRadius: 8, margin: '0 4px', transition: '.15s' }}
                   onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,.04)'}
                   onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 7, background: initGrad[i % initGrad.length], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: '#fff' }}>
-                      {initials}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/user-profile?userId=${encodeURIComponent(m.email)}`)}
+                    title={`View ${m.email}'s profile`}
+                    disabled={m.status === 'invited'}
+                    style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, flex: 1, padding: 0, border: 'none', background: 'transparent', textAlign: 'left', cursor: m.status === 'invited' ? 'default' : 'pointer' }}
+                  >
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <Avatar className="h-7 w-7 rounded-[7px]">
+                        <AvatarImage src={userProfiles[m.email]?.avatar_url || undefined} alt={m.email} className="object-cover" />
+                        <AvatarFallback style={{ background: initGrad[i % initGrad.length], color: '#fff', fontSize: 10, fontWeight: 800 }}>{initials}</AvatarFallback>
+                      </Avatar>
+                      <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: m.status === 'active' ? '#00C853' : '#4B5563', border: '1.5px solid #0B1628', boxShadow: m.status === 'active' ? '0 0 4px #00C853' : 'none' }} />
                     </div>
-                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: m.status === 'active' ? '#00C853' : '#4B5563', border: '1.5px solid #0B1628', boxShadow: m.status === 'active' ? '0 0 4px #00C853' : 'none' }} />
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#EEF4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {m.email?.split('@')[0]}{isYou ? ' (you)' : ''}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#EEF4FF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.email?.split('@')[0]}{isYou ? ' (you)' : ''}
+                      </div>
+                      <div style={{ fontSize: 10, color: roleBadgeColor, fontWeight: 700, textTransform: 'capitalize' }}>{roleLabel}</div>
                     </div>
-                    <div style={{ fontSize: 10, color: roleBadgeColor, fontWeight: 700, textTransform: 'capitalize' }}>{roleLabel}</div>
-                  </div>
-                  {/* Remove button — owner only, not for self */}
-                  {isOwner && !isYou && (
+                  </button>
+                  {isOwner && !isYou && m.status !== 'invited' && (
+                    <select
+                      value={isSubAdminMember ? 'subadmin' : 'member'}
+                      onChange={event => handleMemberRoleChange(m.email, event.target.value)}
+                      aria-label={`Role for ${m.email}`}
+                      title="Change member role"
+                      style={{ maxWidth: 82, background: '#111E33', border: '1px solid rgba(255,255,255,.15)', borderRadius: 5, color: '#AFC7E3', fontSize: 10, padding: '4px 2px' }}
+                    >
+                      <option value="member">Member</option>
+                      <option value="subadmin">Sub-admin</option>
+                    </select>
+                  )}
+                  {canManageMembers && !isYou && (isOwner || !isSubAdminMember) && (
                     <button
                       onClick={() => handleRemoveMember(m.email)}
                       title="Remove member"
@@ -412,10 +605,15 @@ export default function Workspace() {
           </div>
 
           {/* Invite button — owner only */}
-          {isOwner && (
+          {canManageMembers && (
             <div style={{ padding: '12px 12px 16px', borderTop: '1px solid rgba(255,255,255,.07)' }}>
               {showInvite ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ fontSize: 11, color: '#8BADD4' }}>
+                    Seats: {workspace.seats_used ?? members.filter(member =>
+                    !['invited', 'removed', 'deactivated', 'inactive'].includes(member.status)
+                  ).length} / {workspace.seat_limit ?? 1} · Invites use a seat only after acceptance
+                  </div>
                   <input
                     autoFocus
                     value={inviteEmail}
@@ -431,16 +629,16 @@ export default function Workspace() {
                       onClick={async () => {
                         setInviting(true);
                         try {
-                          // Send the real email via our PHP backend
-                          const success = await sendWorkspaceInviteEmail(inviteEmail, user?.full_name, workspace.name);
+                          const invitation = await api.post(`/workspaces/${workspace.id}/invites`, { email: inviteEmail });
+                          const success = await sendWorkspaceInviteEmail(
+                            invitation.email,
+                            user?.full_name,
+                            workspace.name,
+                            invitation.token
+                          );
 
                           if (!success) {
                             throw new Error('Failed to send invite email');
-                          }
-
-                          if (!members.find(m => m.email === inviteEmail)) {
-                            const newMembers = [...members, { email: inviteEmail, role: 'member', status: 'invited' }];
-                            await api.put(`/workspaces/${workspace.id}/members`, { members: newMembers });
                           }
 
                           setInviteMsg('✅ Invite sent!');
@@ -480,6 +678,30 @@ export default function Workspace() {
           workspaceId={workspace.id}
           workspaceName={workspace.name}
           inviterName={user?.full_name}
+        />
+        <B2BAccessDialog
+          space={respondingB2BInvite}
+          mode="accept"
+          onClose={() => setRespondingB2BInvite(null)}
+        />
+        <B2BAccessDialog
+          space={managingB2BAccess}
+          mode="manage"
+          onClose={() => setManagingB2BAccess(null)}
+        />
+        <WorkspaceSearchModal
+          open={searchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+          workspaceId={workspace.id}
+          channels={channels}
+          onSelectChannel={(chId) => { setActiveChannelId(chId); setActiveDm(null); }}
+          onSelectDm={(dmEmail) => { setActiveDm(dmEmail); setActiveChannelId(null); }}
+        />
+        <StatusModal
+          open={statusModalOpen}
+          onClose={() => setStatusModalOpen(false)}
+          user={user}
+          onStatusUpdated={() => queryClient.invalidateQueries({ queryKey: ['userProfiles'] })}
         />
       </div>
     </div>

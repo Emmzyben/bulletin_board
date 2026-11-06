@@ -112,13 +112,13 @@ const sendExternalEmail = async (toEmail, subject, message) => {
 // ------------------------------------------------------------
 // SEND WORKSPACE INVITE EMAIL
 // ------------------------------------------------------------
-export const sendWorkspaceInviteEmail = async (toEmail, inviterName, workspaceName) => {
-    const inviteUrl = `${window.location.origin}/signup`;
+export const sendWorkspaceInviteEmail = async (toEmail, inviterName, workspaceName, inviteToken) => {
+    const inviteUrl = `${window.location.origin}/invite?token=${encodeURIComponent(inviteToken)}`;
 
     const title = "You've been invited to join a Workspace!";
     const content = `${inviterName || 'A colleague'} has invited you to join the **${workspaceName}** workspace on Bulletin Board.
     
-    Click the button below to accept the invitation and start collaborating with your team.`;
+    Click the button below to sign up or log in, then review the workspace details and accept the invitation. This invitation expires in 7 days.`;
 
     const html = getHtmlTemplate(title, content, "Accept Invitation", inviteUrl);
 
@@ -138,10 +138,7 @@ export const sendB2BInviteEmail = async (toEmail, inviterName, workspaceName) =>
     const title = "B2B Partnership Invitation";
     const content = `${inviterName || 'A partner'} has invited you to a B2B Space in the **${workspaceName}** workspace on Bulletin Board.
     
-    To accept this invitation:
-    1. Click the button below to log in or create an account.
-    2. Once logged in, go to the Workspace page.
-    3. You will see a banner at the top of your screen with your pending invites. Click "Accept" there to connect your accounts.`;
+    Click the button below to log in to the workspace admin account, then accept the invitation from your Workspace page.`;
 
     const html = getHtmlTemplate(title, content, "Log in to Accept Invite", inviteUrl);
 
@@ -234,4 +231,3 @@ export const sendOTPEmail = async (toEmail, otp) => {
         html
     );
 };
-

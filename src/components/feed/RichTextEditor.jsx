@@ -33,16 +33,19 @@ export default function RichTextEditor({ value, onChange, placeholder = "Write y
   return (
     <div className={`border rounded-lg transition-all ${isFocused ? 'border-primary ring-1 ring-primary/30' : 'border-slate-700'}`}>
       <div className="flex gap-1 p-2 border-b border-slate-700 bg-slate-900/50">
-        {tools.map(tool => (
-          <button
-            key={tool.label}
-            onClick={tool.action}
-            title={tool.label}
-            className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            <tool.icon className="w-4 h-4" />
-          </button>
-        ))}
+        {tools.map(tool => {
+          const ToolIcon = tool.icon;
+          return (
+            <button
+              key={tool.label}
+              onClick={tool.action}
+              title={tool.label}
+              className="p-1.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+            >
+              <ToolIcon className="w-4 h-4" />
+            </button>
+          );
+        })}
       </div>
       <textarea
         ref={textareaRef}

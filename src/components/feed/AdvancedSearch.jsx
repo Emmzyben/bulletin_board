@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, X, Loader2, Cpu, Stethoscope, Building2, BookOpen, Building, Home, Hotel, Briefcase, Music } from 'lucide-react';
+import { Search, Filter, Loader2, BookOpen } from 'lucide-react';
 import { ECOSYSTEMS, FLAIRS, getFlair } from '@/lib/ecosystems';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api';
@@ -25,35 +25,30 @@ export default function AdvancedSearch({ onSearch, onFilter }) {
 
   const trimmed = searchQuery.trim().toLowerCase();
 
-  const { data: matchedPosts = [], isFetching: fetchingPosts } = useQuery({
+  const { data: matchedPosts = [], isFetching: fetchingPosts, isError: postsSearchError, error: postsSearchErrorDetails } = useQuery({
     queryKey: ['feed-search-posts', trimmed],
     queryFn: async () => {
-      try {
-        const data = await api.get(`/search/posts?q=${encodeURIComponent(trimmed)}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
+      const data = await api.get(`/search/posts?q=${encodeURIComponent(trimmed)}`);
+      if (!Array.isArray(data)) throw new Error('The post search response was invalid.');
+      return data;
     },
     enabled: trimmed.length >= 2,
     staleTime: 30000,
   });
 
-  const { data: matchedUsers = [], isFetching: fetchingUsers } = useQuery({
+  const { data: matchedUsers = [], isFetching: fetchingUsers, isError: usersSearchError, error: usersSearchErrorDetails } = useQuery({
     queryKey: ['feed-search-users', trimmed],
     queryFn: async () => {
-      try {
-        const data = await api.get(`/search/users?q=${encodeURIComponent(trimmed)}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
+      const data = await api.get(`/search/users?q=${encodeURIComponent(trimmed)}`);
+      if (!Array.isArray(data)) throw new Error('The user search response was invalid.');
+      return data;
     },
     enabled: trimmed.length >= 2,
     staleTime: 30000,
   });
 
   const isLoading = fetchingPosts || fetchingUsers;
+  const searchError = postsSearchError ? postsSearchErrorDetails : usersSearchErrorDetails;
 
   const matchedEcosystems = trimmed.length >= 2
     ? ECOSYSTEMS.filter(e => e.label.toLowerCase().includes(trimmed)).slice(0, 3)
@@ -68,7 +63,7 @@ export default function AdvancedSearch({ onSearch, onFilter }) {
 
   const handleUserClick = (u) => {
     setOpen(false);
-    navigate(`/user-profile?email=${encodeURIComponent(u.email)}`);
+    navigate(`/user-profile?userId=${encodeURIComponent(u.email)}`);
   };
 
   const handleEcoClick = (eco) => {
@@ -109,7 +104,13 @@ export default function AdvancedSearch({ onSearch, onFilter }) {
         {/* Dropdown */}
         {open && trimmed.length >= 2 && (
           <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 max-h-[400px] overflow-y-auto">
-            {!hasResults && !isLoading && (
+            {searchError && !isLoading && (
+              <div className="p-4 text-center text-sm text-red-400" role="alert">
+                Search failed: {searchError.message || 'Please try again.'}
+              </div>
+            )}
+
+            {!hasResults && !isLoading && !searchError && (
               <div className="p-4 text-center text-sm text-slate-400">
                 No results for "{searchQuery}"
               </div>

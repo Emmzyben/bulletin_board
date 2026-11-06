@@ -41,7 +41,10 @@ function CommentInput({ placeholder, onSubmit, submitting, autoFocus = false }) 
       <UI.Button
         size="sm"
         className="self-end"
-        onClick={() => { onSubmit(body); setBody(''); }}
+        onClick={async () => {
+          const submitted = await onSubmit(body);
+          if (submitted) setBody('');
+        }}
         disabled={!body.trim() || submitting}
       >
         {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Post'}
@@ -50,7 +53,7 @@ function CommentInput({ placeholder, onSubmit, submitting, autoFocus = false }) 
   );
 }
 
-function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply, onDelete, submittingId }) {
+function CommentNode({ comment, depth, post, userEmail, userName, isGuest, onRequireLogin, onSubmitReply, onDelete, submittingId }) {
   const navigate = useNavigate();
   const [showReply, setShowReply] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -80,7 +83,7 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <button
-                  onClick={() => comment.author_email && navigate(`/user-profile?email=${encodeURIComponent(comment.author_email)}`)}
+                  onClick={() => comment.author_email && navigate(`/user-profile?userId=${encodeURIComponent(comment.author_email)}`)}
                   className="text-xs font-semibold text-slate-300 hover:text-primary transition-colors cursor-pointer bg-transparent border-none p-0"
                 >
                   {comment.author_name || 'Anonymous'}
@@ -94,7 +97,10 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
               {/* Actions row: Reply + Delete */}
               <div className="flex items-center gap-3 mt-1.5">
                 <button
-                  onClick={() => setShowReply(r => !r)}
+                  onClick={() => {
+                    if (isGuest) onRequireLogin();
+                    else setShowReply(r => !r);
+                  }}
                   className="flex items-center gap-1 text-xs text-slate-500 hover:text-primary transition-colors"
                 >
                   <CornerDownRight className="w-3 h-3" />
@@ -106,7 +112,11 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
 
                 {comment.author_email === userEmail && (
                   <button
-                    onClick={() => onDelete(comment.id)}
+                    onClick={async () => {
+                      setDeleting(true);
+                      await onDelete(comment.id);
+                      setDeleting(false);
+                    }}
                     disabled={deleting}
                     className="flex items-center gap-1 text-xs text-slate-600 hover:text-red-400 transition-colors disabled:opacity-50"
                     title="Delete comment"
@@ -124,9 +134,10 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
                     placeholder={`Reply to ${comment.author_name || 'Anonymous'}…`}
                     autoFocus
                     submitting={submittingId === comment.id}
-                    onSubmit={(body) => {
-                      onSubmitReply(body, comment.id);
-                      setShowReply(false);
+                    onSubmit={async body => {
+                      const submitted = await onSubmitReply(body, comment.id);
+                      if (submitted) setShowReply(false);
+                      return submitted;
                     }}
                   />
                 </div>
@@ -145,6 +156,8 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
                   post={post}
                   userEmail={userEmail}
                   userName={userName}
+                  isGuest={isGuest}
+                  onRequireLogin={onRequireLogin}
                   onSubmitReply={onSubmitReply}
                   onDelete={onDelete}
                   submittingId={submittingId}
@@ -158,25 +171,23 @@ function CommentNode({ comment, depth, post, userEmail, userName, onSubmitReply,
   );
 }
 
-export default function CommentSection({ post, userEmail, userName }) {
+export default function CommentSection({ post, userEmail, userName, isGuest = false, onRequireLogin }) {
   const [submittingId, setSubmittingId] = useState(null); // null = top-level, else parent comment id
   const queryClient = useQueryClient();
 
-  const { data: comments = [], isLoading } = useQuery({
+  const { data: comments = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['comments', post.id],
     queryFn: async () => {
-      try {
-        const data = await api.get(`/comments?post_id=${post.id}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
+      const data = await api.get(`/comments?post_id=${encodeURIComponent(post.id)}`);
+      if (!Array.isArray(data)) throw new Error('The comments response was invalid.');
+      return data;
     },
   });
 
   const submitComment = async (body, parentId = null) => {
-    if (!body.trim()) return;
+    if (!body.trim()) return false;
     const trimmedBody = body.trim();
+    setSubmittingId(parentId || 'top');
     try {
       await api.post('/comments', {
         post_id: post.id,
@@ -185,13 +196,14 @@ export default function CommentSection({ post, userEmail, userName }) {
       });
     } catch (err) {
       toast.error('Failed to post comment');
+      return false;
+    } finally {
       setSubmittingId(null);
-      return;
     }
 
-    setSubmittingId(null);
     queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
     queryClient.invalidateQueries({ queryKey: ['posts'] });
+    return true;
   };
 
   const deleteComment = async (commentId) => {
@@ -200,8 +212,10 @@ export default function CommentSection({ post, userEmail, userName }) {
       toast.success('Comment deleted');
       queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      return true;
     } catch (err) {
       toast.error('Failed to delete comment');
+      return false;
     }
   };
 
@@ -209,21 +223,37 @@ export default function CommentSection({ post, userEmail, userName }) {
 
   return (
     <div className="mt-3 pt-3 border-t border-slate-800 space-y-3">
-      {/* Top-level comment input */}
-      <CommentInput
-        placeholder="Write a comment…"
-        submitting={submittingId === 'top'}
-        onSubmit={(body) => submitComment(body, null)}
-        autoFocus={false}
-      />
+      {isGuest ? (
+        <button
+          type="button"
+          onClick={onRequireLogin}
+          className="w-full rounded-md border border-slate-700 px-3 py-2 text-left text-sm text-slate-400 hover:border-primary"
+        >
+          Sign in to join the conversation
+        </button>
+      ) : (
+        <CommentInput
+          placeholder="Write a comment…"
+          submitting={submittingId === 'top'}
+          onSubmit={(body) => submitComment(body, null)}
+          autoFocus={false}
+        />
+      )}
 
       {/* Comments tree */}
       {isLoading ? (
         <div className="flex justify-center py-4">
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
         </div>
+      ) : isError ? (
+        <div className="text-center py-3" role="alert">
+          <p className="text-xs text-destructive mb-2">{error?.message || 'Could not load comments.'}</p>
+          <button type="button" onClick={() => refetch()} className="text-xs text-primary hover:underline">
+            Retry
+          </button>
+        </div>
       ) : tree.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-2">No comments yet. Be the first!</p>
+        <p className="text-xs text-muted-foreground text-center py-2">No comments yet.</p>
       ) : (
         <div className="space-y-3">
           {tree.map(comment => (
@@ -234,6 +264,8 @@ export default function CommentSection({ post, userEmail, userName }) {
               post={post}
               userEmail={userEmail}
               userName={userName}
+              isGuest={isGuest}
+              onRequireLogin={onRequireLogin}
               onSubmitReply={submitComment}
               onDelete={deleteComment}
               submittingId={submittingId}

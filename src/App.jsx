@@ -14,6 +14,7 @@ import Workspace from './pages/Workspace';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import Pricing from './pages/Pricing';
+import Billing from './pages/Billing';
 import Support from './pages/Support';
 import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
@@ -25,6 +26,7 @@ import Leaderboard from './pages/Leaderboard';
 import About from './pages/About';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import WorkspaceInvite from './pages/WorkspaceInvite';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/billing" element={<Billing />} />
         <Route path="/saved" element={<Feed />} />
         <Route path="/my-posts" element={<Feed />} />
         <Route path="/communities" element={<Communities />} />
@@ -72,6 +75,7 @@ const AuthenticatedApp = () => {
       <Route path="/demo" element={<Demo />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/invite" element={<WorkspaceInvite />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

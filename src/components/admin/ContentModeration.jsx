@@ -1,45 +1,28 @@
 import React, { useState } from 'react';
 import { api } from '@/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2, Flag, Ban, Loader2 } from 'lucide-react';
+import { Trash2, Ban, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContentModeration({ workspace }) {
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('open');
   const [selectedPost, setSelectedPost] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: posts = [], isLoading: loadingPosts } = useQuery({
+  const { data: posts = [], isLoading: loadingPosts, isError: postsError, error: postsErrorDetails, refetch: refetchPosts } = useQuery({
     queryKey: ['moderation-posts', workspace?.id],
-    queryFn: async () => {
-      try {
-        const data = await api.get('/posts?limit=100');
-        return data || [];
-      } catch (err) {
-        return [];
-      }
-    },
+    queryFn: () => api.get('/posts?limit=100'),
   });
 
-  const { data: channels = [], isLoading: loadingChannels } = useQuery({
-    queryKey: ['moderation-channels', workspace?.id],
-    queryFn: async () => {
-      if (!workspace?.id) return [];
-      try {
-        const data = await api.get(`/channels?workspace_id=${workspace.id}`);
-        return data || [];
-      } catch (err) {
-        return [];
-      }
-    },
-    enabled: !!workspace?.id,
+  const { data: reports = [], isLoading: loadingReports, isError: reportsError, error: reportsErrorDetails, refetch: refetchReports } = useQuery({
+    queryKey: ['moderation-reports', filter],
+    queryFn: () => api.get(`/admin/reports?status=${filter}`),
   });
 
   const handleDeletePost = async (postId) => {
     if (window.confirm('Delete this post?')) {
       try {
-        await api.delete(`/posts/${postId}`);
-        
+        await api.delete(`/admin/posts/${postId}`);
         queryClient.invalidateQueries({ queryKey: ['moderation-posts'] });
         toast.success('Post deleted');
         setSelectedPost(null);
@@ -50,13 +33,16 @@ export default function ContentModeration({ workspace }) {
     }
   };
 
-  const handleBanUser = async (userEmail) => {
-    if (window.confirm(`Ban user ${userEmail}?`)) {
+  const handleBanUser = async (userEmail, reportId) => {
+    if (window.confirm(`Suspend user ${userEmail}?`)) {
       try {
-        await api.put(`/users/${userEmail}/ban`);
-        
+        await api.put(`/admin/users/${encodeURIComponent(userEmail)}`, { status: 'banned' });
+        if (reportId) await api.put(`/admin/reports/${reportId}`, { status: 'reviewed' });
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-overview'] });
+        queryClient.invalidateQueries({ queryKey: ['moderation-reports'] });
         queryClient.invalidateQueries({ queryKey: ['moderation-posts'] });
-        toast.success('User banned');
+        toast.success('User suspended and report reviewed');
       } catch (error) {
         console.error('Ban failed:', error);
         toast.error('Failed to ban user');
@@ -64,71 +50,98 @@ export default function ContentModeration({ workspace }) {
     }
   };
 
-  const flaggedPosts = posts.filter(p => p.flagged);
-  const displayPosts = filter === 'flagged' ? flaggedPosts : posts;
-  const isLoading = loadingPosts || loadingChannels;
+  const updateReport = async (reportId, status) => {
+    try {
+      await api.put(`/admin/reports/${reportId}`, { status });
+      await queryClient.invalidateQueries({ queryKey: ['moderation-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-overview'] });
+      toast.success(status === 'reviewed' ? 'Report marked reviewed' : 'Report dismissed');
+    } catch (error) {
+      toast.error(error.message || 'Failed to update report');
+    }
+  };
+  const isLoading = loadingPosts || loadingReports;
 
   return (
     <div>
       <h3 style={{ fontSize: 18, fontWeight: 800, color: '#EEF4FF', marginBottom: 24 }}>Content Moderation</h3>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {['all', 'flagged'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{
-              padding: '8px 14px', borderRadius: 8, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
-              background: filter === f ? '#1B6EF3' : 'transparent',
-              borderColor: filter === f ? '#1B6EF3' : 'rgba(255,255,255,.15)',
-              color: filter === f ? '#fff' : '#7FA8D4',
-              transition: '.2s'
-            }}
-          >
-            {f === 'flagged' && `🚩 Flagged (${flaggedPosts.length})`}
-            {f === 'all' && `All Posts (${posts.length})`}
-          </button>
-        ))}
-      </div>
-
-      {/* Posts list */}
-      {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
-          <Loader2 className="w-8 h-8 animate-spin text-slate-500" />
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 24 }}>
-          {displayPosts.slice(0, 20).map(p => (
-            <div
-              key={p.id}
-              onClick={() => setSelectedPost(p)}
-              style={{
-                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10,
-                padding: '14px', cursor: 'pointer', transition: '.15s',
-              }}
-              onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(27,110,243,.5)'}
-              onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,.07)'}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 4 }}>{p.title}</div>
-                  <div style={{ fontSize: 11, color: '#6B93C4' }}>by {p.author_name || 'Anonymous'}</div>
-                </div>
-                {p.flagged && <Flag style={{ width: 16, height: 16, color: '#FF8F00', flexShrink: 0 }} />}
-              </div>
-              <div style={{ fontSize: 12, color: '#6B93C4', lineHeight: 1.4, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                {p.body}
-              </div>
-              <div style={{ fontSize: 10, color: '#2E4D6E' }}>{p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Just now'}</div>
-            </div>
-          ))}
-          {displayPosts.length === 0 && (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '40px', color: '#6B93C4', fontSize: 13 }}>No posts to moderate.</div>
-          )}
+      {(postsError || reportsError) && (
+        <div role="alert" style={{ marginBottom: 16, padding: 14, border: '1px solid rgba(239,83,80,.3)', borderRadius: 9, color: '#EF8A80' }}>
+          <div>{reportsError ? `Reports: ${reportsErrorDetails.message}` : `Posts: ${postsErrorDetails.message}`}</div>
+          <button onClick={() => { if (reportsError) refetchReports(); if (postsError) refetchPosts(); }} style={{ marginTop: 8, color: '#6AADFF', background: 'none', border: 0, cursor: 'pointer' }}>Retry</button>
         </div>
       )}
 
+      <section style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, overflow: 'hidden', marginBottom: 24 }}>
+        <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+          <h4 style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF' }}>User reports</h4>
+          <p style={{ fontSize: 12, color: '#6B93C4', marginTop: 4 }}>Reports submitted by users are stored for review.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
+          {['open', 'all'].map(status => (
+            <button key={status} onClick={() => setFilter(status)} style={{
+              padding: '7px 12px', borderRadius: 7, border: `1px solid ${filter === status ? '#1B6EF3' : 'rgba(255,255,255,.15)'}`,
+              background: filter === status ? 'rgba(27,110,243,.15)' : 'transparent',
+              color: filter === status ? '#6AADFF' : '#7FA8D4', cursor: 'pointer', textTransform: 'capitalize',
+            }}>{status === 'open' ? 'Open reports' : 'All reports'}</button>
+          ))}
+        </div>
+        {isLoading ? (
+          <div role="status" style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><Loader2 className="animate-spin" /></div>
+        ) : reports.length ? (
+          <div>
+            {reports.map(report => (
+              <div key={report.id} style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ color: '#EEF4FF', fontSize: 13, fontWeight: 700 }}>
+                    {report.target?.full_name || report.target_email}
+                    <span style={{ color: '#6B93C4', fontWeight: 400 }}> · reported by {report.reporter?.email || report.reporter_email}</span>
+                  </div>
+                  <div style={{ marginTop: 4, color: '#BBD4F0', fontSize: 12 }}>{report.reason || 'No reason provided'}</div>
+                  <div style={{ marginTop: 4, color: '#6B93C4', fontSize: 11 }}>
+                    {new Date(report.createdAt).toLocaleString()} · {report.status}
+                  </div>
+                </div>
+                {report.status === 'open' && (
+                  <div style={{ display: 'flex', gap: 7 }}>
+                    <button onClick={() => handleBanUser(report.target_email, report.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 10px', background: 'rgba(239,83,80,.12)', border: '1px solid rgba(239,83,80,.25)', borderRadius: 7, color: '#EF8A80', cursor: 'pointer' }}>
+                      <Ban size={13} /> Suspend user
+                    </button>
+                    <button onClick={() => updateReport(report.id, 'reviewed')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 10px', background: 'rgba(0,200,83,.1)', border: '1px solid rgba(0,200,83,.2)', borderRadius: 7, color: '#00C853', cursor: 'pointer' }}>
+                      <Check size={13} /> Review
+                    </button>
+                    <button onClick={() => updateReport(report.id, 'dismissed')} style={{ padding: '7px 10px', background: 'transparent', border: '1px solid rgba(255,255,255,.12)', borderRadius: 7, color: '#BBD4F0', cursor: 'pointer' }}>Dismiss</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : <div style={{ padding: 24, textAlign: 'center', color: '#6B93C4', fontSize: 13 }}>No {filter === 'open' ? 'open ' : ''}reports.</div>}
+      </section>
+
+      {/* Posts */}
+      <h4 style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 12 }}>Recent posts</h4>
+      {isLoading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}><Loader2 className="animate-spin" /></div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 24 }}>
+          {posts.slice(0, 20).map(p => (
+            <div
+              key={p.id}
+              onClick={() => setSelectedPost(p)}
+              style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: 14, cursor: 'pointer' }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#EEF4FF', marginBottom: 4 }}>{p.title}</div>
+              <div style={{ fontSize: 11, color: '#6B93C4' }}>by {p.author_name || p.author_email || 'Anonymous'}</div>
+              <div style={{ fontSize: 12, color: '#6B93C4', marginTop: 8 }}>{p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Recently created'}</div>
+            </div>
+          ))}
+          {posts.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 24, color: '#6B93C4' }}>No posts to moderate.</div>}
+        </div>
+      )}
+
+      {/* Selected post actions */}
       {/* Post detail modal */}
       {selectedPost && (
         <div style={{
@@ -197,21 +210,6 @@ export default function ContentModeration({ workspace }) {
         </div>
       )}
 
-      {/* Moderation channels */}
-      <div style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, padding: '16px' }}>
-        <h4 style={{ fontSize: 14, fontWeight: 700, color: '#EEF4FF', marginBottom: 12 }}>Moderation Channels</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {channels.map(ch => (
-            <div key={ch.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'rgba(255,255,255,.02)', borderRadius: 6, border: '1px solid rgba(255,255,255,.05)' }}>
-              <div style={{ fontSize: 12, color: '#EEF4FF', fontWeight: 600 }}>#{ch.name}</div>
-              <button style={{ background: 'none', border: 'none', color: '#6AADFF', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Manage</button>
-            </div>
-          ))}
-          {channels.length === 0 && (
-            <div style={{ fontSize: 12, color: '#6B93C4', textAlign: 'center', padding: '10px' }}>No moderation channels configured.</div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

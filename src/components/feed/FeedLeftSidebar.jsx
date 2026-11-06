@@ -43,6 +43,7 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {FEED_TABS.map(tab => {
             const active = activeTab === tab.id;
+            const TabIcon = tab.icon;
             return (
               <button
                 key={tab.id}
@@ -59,7 +60,7 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
                 onMouseOut={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isDark ? '#7FA8D4' : '#475569'; } }}
               >
                 {active && <div style={{ position: 'absolute', left: 0, top: 4, bottom: 4, width: 3, background: '#1B6EF3', borderRadius: '0 3px 3px 0' }} />}
-                <tab.icon style={{ width: 15, height: 15 }} />
+                <TabIcon style={{ width: 15, height: 15 }} />
                 {tab.label}
               </button>
             );
@@ -141,20 +142,23 @@ export default function FeedLeftSidebar({ activeTab, setActiveTab, activeEcosyst
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {[
             { to: '/saved', icon: Bookmark, label: 'Saved' },
-            { to: user?.email ? `/user-profile?email=${encodeURIComponent(user.email)}` : '/profile', icon: FileText, label: 'Your Posts' },
+            { to: user?.email ? `/user-profile?userId=${encodeURIComponent(user.email)}` : '/profile', icon: FileText, label: 'Your Posts' },
             { to: '/workspace', icon: Building2, label: 'Workspace' },
-          ].map(item => (
-            <Link
-              key={item.to}
-              to={item.to}
-              style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, fontSize: 13, color: isDark ? '#7FA8D4' : '#475569', textDecoration: 'none', transition: '.15s' }}
-              onMouseOver={e => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)'; e.currentTarget.style.color = isDark ? '#EEF4FF' : '#1F3A5F'; }}
-              onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isDark ? '#7FA8D4' : '#475569'; }}
-            >
-              <item.icon style={{ width: 15, height: 15 }} />
-              {item.label}
-            </Link>
-          ))}
+          ].map(item => {
+            const ItemIcon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 10px', borderRadius: 8, fontSize: 13, color: isDark ? '#7FA8D4' : '#475569', textDecoration: 'none', transition: '.15s' }}
+                onMouseOver={e => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.05)'; e.currentTarget.style.color = isDark ? '#EEF4FF' : '#1F3A5F'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isDark ? '#7FA8D4' : '#475569'; }}
+              >
+                <ItemIcon style={{ width: 15, height: 15 }} />
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </aside>

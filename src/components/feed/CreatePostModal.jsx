@@ -12,7 +12,7 @@ import RichTextEditor from './RichTextEditor';
 import { api } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
-import { pinata } from '@/lib/pinata';
+import { uploadFile } from '@/lib/upload';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
@@ -36,6 +36,7 @@ export default function CreatePostModal({ open, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollDurationDays, setPollDurationDays] = useState('7');
   const [errors, setErrors] = useState({});
   const queryClient = useQueryClient();
 
@@ -73,7 +74,9 @@ export default function CreatePostModal({ open, onClose }) {
 
     if (!title.trim()) {
       newErrors.title = 'Title is required';
-    } else if (title.length > 500) {
+    } else if (flair === 'poll' && title.trim().length > 140) {
+      newErrors.title = 'Poll questions must be 140 characters or less';
+    } else if (flair !== 'poll' && title.length > 500) {
       newErrors.title = 'Title must be 500 characters or less';
     }
 
@@ -87,8 +90,12 @@ export default function CreatePostModal({ open, onClose }) {
 
     if (flair === 'poll') {
       const validOptions = pollOptions.filter(o => o.trim());
-      if (validOptions.length < 2) {
-        newErrors.poll = 'Poll must have at least 2 options';
+      if (validOptions.length < 2 || validOptions.length > 4) {
+        newErrors.poll = 'Polls need between 2 and 4 options';
+      } else if (validOptions.some(option => option.trim().length > 30)) {
+        newErrors.poll = 'Each option must be 30 characters or less';
+      } else if (new Set(validOptions.map(option => option.trim().toLocaleLowerCase())).size !== validOptions.length) {
+        newErrors.poll = 'Poll options must be unique';
       }
     }
 
@@ -106,11 +113,8 @@ export default function CreatePostModal({ open, onClose }) {
       if (imageFile) {
         setIsUploadingImage(true);
         try {
-          const { url } = await api.get('/upload/presigned_url');
-          const upload = await pinata.upload.public.file(imageFile).url(url);
-          if (upload.cid) {
-            image_url = await pinata.gateways.public.convert(upload.cid);
-          }
+          const data = await uploadFile(imageFile);
+          image_url = data.url;
         } finally {
           setIsUploadingImage(false);
         }
@@ -135,6 +139,7 @@ export default function CreatePostModal({ open, onClose }) {
         postData.poll_options = pollOptions
           .filter(o => o.trim())
           .map(text => ({ text: text.trim(), votes: 0 }));
+        postData.poll_duration_days = Number(pollDurationDays);
       }
 
       await api.post('/posts', postData);
@@ -149,6 +154,7 @@ export default function CreatePostModal({ open, onClose }) {
       setEcosystem(user?.primary_ecosystem || '');
       setImageFile(null);
       setPollOptions(['', '']);
+      setPollDurationDays('7');
       setErrors({});
 
       onClose();
@@ -265,7 +271,7 @@ export default function CreatePostModal({ open, onClose }) {
             <Label className="text-xs text-muted-foreground mb-1.5 block">
               Title <span className="text-red-500">*</span>
               <span className="text-xs text-muted-foreground ml-2">
-                {title.length}/500
+                {title.length}/{flair === 'poll' ? 140 : 500}
               </span>
             </Label>
             <Input
@@ -276,7 +282,7 @@ export default function CreatePostModal({ open, onClose }) {
               }}
               placeholder="What's happening in your industry today?"
               className={`text-base ${errors.title ? 'border-red-500' : ''}`}
-              maxLength="500"
+              maxLength={flair === 'poll' ? 140 : 500}
             />
             {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
           </div>
@@ -307,17 +313,45 @@ export default function CreatePostModal({ open, onClose }) {
                       if (errors.poll) setErrors(prev => ({ ...prev, poll: null }));
                     }}
                     placeholder={`Option ${i + 1}`}
+                    maxLength={30}
                   />
                 ))}
+                <div className="text-xs text-muted-foreground">{pollOptions.filter(option => option.trim()).length}/4 options</div>
                 {errors.poll && <p className="text-xs text-red-500">{errors.poll}</p>}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPollOptions([...pollOptions, ''])}
-                >
-                  + Add Option
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {pollOptions.length < 4 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPollOptions([...pollOptions, ''])}
+                    >
+                      + Add Option
+                    </Button>
+                  )}
+                  {pollOptions.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPollOptions(pollOptions.slice(0, -1))}
+                    >
+                      Remove Option
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4">
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Poll duration</Label>
+                <Select value={pollDurationDays} onValueChange={setPollDurationDays}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 day</SelectItem>
+                    <SelectItem value="3">3 days</SelectItem>
+                    <SelectItem value="7">1 week</SelectItem>
+                    <SelectItem value="14">2 weeks</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}

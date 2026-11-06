@@ -4,14 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ChevronUp, ChevronDown, MessageSquare, Share2, Trophy, Bookmark, LogIn, UserPlus, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, MessageSquare, Share2, Bookmark, LogIn, UserPlus, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { getFlair, getEcosystem } from '@/lib/ecosystems';
 import { api } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import CommentSection from './CommentSection.jsx';
+import PollCard from './PollCard.jsx';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from '@/lib/ThemeContext';
@@ -19,7 +20,7 @@ import { useTheme } from '@/lib/ThemeContext';
 /** @type {any} */
 const UI = { Card, Badge, Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Avatar, AvatarFallback };
 
-export default function PostCard({ post, userVotes = {}, savedPosts = [], userEmail, userName, isGuest = false }) {
+export default function PostCard({ post, userVotes = {}, userPollVotes = {}, savedPosts = [], userEmail, userName, isGuest = false }) {
   const { navigateToLogin } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -30,6 +31,8 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const flair = getFlair(post.flair);
   const eco = getEcosystem(post.ecosystem);
+  const FlairIcon = typeof flair?.icon === 'function' ? flair.icon : null;
+  const EcosystemIcon = typeof eco?.icon === 'function' ? eco.icon : null;
   const queryClient = useQueryClient();
   const currentVote = userVotes[post.id];
   const isSaved = savedPosts.includes(post.id);
@@ -164,7 +167,7 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
-                      onClick={() => authorEmail && navigate(`/user-profile?email=${encodeURIComponent(authorEmail)}`)}
+                      onClick={() => authorEmail && navigate(`/user-profile?userId=${encodeURIComponent(authorEmail)}`)}
                       className="font-semibold text-sm text-foreground hover:text-primary transition-colors cursor-pointer bg-transparent border-none p-0"
                     >
                       {authorName}
@@ -181,19 +184,19 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
                       </UI.Button>
                     )}
                   </div>
-                  {post.created_at && (
+                  {(post.created_at || post.createdAt) && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(post.created_at || post.createdAt), { addSuffix: true })}
                     </div>
                   )}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <UI.Badge variant="default" className={`${flair.color} text-white text-xs font-medium flex items-center gap-1`}>
-                  <flair.icon size={14} /> {flair.label}
+                  {FlairIcon ? <FlairIcon size={14} /> : null} {flair.label}
                 </UI.Badge>
                 <UI.Badge variant="outline" className={`text-xs ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-300 text-slate-600'} flex items-center gap-1`}>
-                  <eco.icon size={14} /> {eco.label}
+                  {EcosystemIcon ? <EcosystemIcon size={14} /> : null} {eco.label}
                 </UI.Badge>
               </div>
             </div>
@@ -216,22 +219,14 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
               <img src={post.image_url} alt={post.title || 'Post image'} className="rounded-lg mt-3 max-h-72 object-cover w-full" />
             )}
 
-            {post.flair === 'poll' && post.poll_options && (
-              <div className="mt-3 space-y-2">
-                {post.poll_options.map((opt, i) => {
-                  const totalVotes = post.poll_options.reduce((s, o) => s + (o.votes || 0), 0);
-                  const pct = totalVotes > 0 ? Math.round((opt.votes / totalVotes) * 100) : 0;
-                  return (
-                    <div key={i} className="relative bg-secondary rounded-lg overflow-hidden">
-                      <div className="absolute inset-0 bg-primary/10 rounded-lg" style={{ width: `${pct}%` }} />
-                      <div className="relative px-3 py-2 flex justify-between text-sm">
-                        <span>{opt.text}</span>
-                        <span className="font-medium">{pct}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            {post.flair === 'poll' && (
+              <PollCard
+                post={post}
+                userEmail={userEmail}
+                isGuest={isGuest}
+                myVote={userPollVotes[post.id]}
+                onRequireLogin={requireLogin}
+              />
             )}
 
             {/* Actions */}
@@ -265,12 +260,12 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
 
               <UI.Button
                 variant="ghost" size="sm"
-                className={`text-xs h-8 px-2 rounded ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} ${showComments && !isGuest ? 'text-primary' : 'text-muted-foreground'}`}
-                onClick={() => isGuest ? requireLogin() : setShowComments(!showComments)}
+                className={`text-xs h-8 px-2 rounded ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} ${showComments ? 'text-primary' : 'text-muted-foreground'}`}
+                onClick={() => setShowComments(!showComments)}
               >
                 <MessageSquare className="w-4 h-4 mr-1.5" /> {post.comment_count || 0}
               </UI.Button>
-              <UI.Button variant="ghost" size="sm" className={`text-xs h-8 px-2 rounded ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} ${showShare ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => isGuest ? requireLogin() : setShowShare(!showShare)}>
+              <UI.Button variant="ghost" size="sm" className={`text-xs h-8 px-2 rounded ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} ${showShare ? 'text-primary' : 'text-muted-foreground'}`} onClick={() => setShowShare(!showShare)}>
                 <Share2 className="w-4 h-4 mr-1.5" /> Share
               </UI.Button>
 
@@ -319,8 +314,14 @@ export default function PostCard({ post, userVotes = {}, savedPosts = [], userEm
             )}
 
             {/* Comment Section */}
-            {showComments && !isGuest && (
-              <CommentSection post={post} userEmail={userEmail} userName={userName} />
+            {showComments && (
+              <CommentSection
+                post={post}
+                userEmail={userEmail}
+                userName={userName}
+                isGuest={isGuest}
+                onRequireLogin={requireLogin}
+              />
             )}
           </div>
       </UI.Card>

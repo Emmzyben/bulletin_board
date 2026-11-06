@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from '@/api';
 import { useAuth } from '@/lib/AuthContext';
 import { ECOSYSTEMS } from '@/lib/ecosystems';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Check, ArrowRight, Users, Plug, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -20,6 +19,7 @@ const INTEGRATIONS = [
 
 export default function Onboarding() {
   const { user, checkUserAuth } = useAuth();
+  const { hasWorkspaceAccess, isLoading: loadingSubscription, isError: subscriptionError } = useSubscription(Boolean(user));
   const [step, setStep] = useState(1);
   const [selectedEco, setSelectedEco] = useState('');
   const [workspaceChoice, setWorkspaceChoice] = useState('create');
@@ -42,7 +42,7 @@ export default function Onboarding() {
         onboarded: true,
       });
 
-      if (workspaceChoice === 'create' && wsName) {
+      if (hasWorkspaceAccess && workspaceChoice === 'create' && wsName) {
         await api.post('/workspaces', {
           name: wsName,
           ecosystem: selectedEco,
@@ -118,38 +118,55 @@ export default function Onboarding() {
               <Card className="p-6">
                 <h2 className="text-lg font-semibold mb-1">Set up your workspace</h2>
                 <p className="text-sm text-muted-foreground mb-4">Create a new workspace or join one</p>
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant={workspaceChoice === 'create' ? 'default' : 'outline'}
-                    onClick={() => setWorkspaceChoice('create')}
-                    className="flex-1"
-                  >
-                    Create New
-                  </Button>
-                  <Button
-                    variant={workspaceChoice === 'join' ? 'default' : 'outline'}
-                    onClick={() => setWorkspaceChoice('join')}
-                    className="flex-1"
-                  >
-                    Join Existing
-                  </Button>
-                </div>
-                {workspaceChoice === 'create' ? (
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-xs text-muted-foreground mb-1.5 block">Workspace Name</Label>
-                      <Input value={wsName} onChange={e => setWsName(e.target.value)} placeholder="My Company" />
+                {loadingSubscription ? (
+                  <p className="text-sm text-muted-foreground mb-4">Checking your plan…</p>
+                ) : subscriptionError ? (
+                  <p className="text-sm text-destructive mb-4">Could not verify workspace access. Refresh and try again.</p>
+                ) : hasWorkspaceAccess ? (
+                  <>
+                    <div className="flex gap-2 mb-4">
+                      <Button
+                        variant={workspaceChoice === 'create' ? 'default' : 'outline'}
+                        onClick={() => setWorkspaceChoice('create')}
+                        className="flex-1"
+                      >
+                        Create New
+                      </Button>
+                      <Button
+                        variant={workspaceChoice === 'join' ? 'default' : 'outline'}
+                        onClick={() => setWorkspaceChoice('join')}
+                        className="flex-1"
+                      >
+                        Join Existing
+                      </Button>
                     </div>
-                  </div>
+                    {workspaceChoice === 'create' ? (
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-xs text-muted-foreground mb-1.5 block">Workspace Name</Label>
+                          <Input value={wsName} onChange={e => setWsName(e.target.value)} placeholder="My Company" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1.5 block">Invite Code</Label>
+                        <Input value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="Enter invite code" />
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1.5 block">Invite Code</Label>
-                    <Input value={inviteCode} onChange={e => setInviteCode(e.target.value)} placeholder="Enter invite code" />
+                  <div className="rounded-lg border p-4 mb-4">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Private workspaces are included with Pro. You can finish setting up your free community profile now and upgrade later.
+                    </p>
+                    <Button variant="outline" onClick={() => navigate('/pricing')} className="w-full">
+                      View Pro plans
+                    </Button>
                   </div>
                 )}
                 <div className="flex gap-2 mt-4">
                   <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Back</Button>
-                  <Button onClick={() => setStep(3)} className="flex-1">
+                  <Button onClick={() => setStep(3)} disabled={loadingSubscription} className="flex-1">
                     Continue <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>

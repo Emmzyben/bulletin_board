@@ -1,34 +1,20 @@
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trash2, Archive, CheckCheck } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Trash2, CheckCheck } from 'lucide-react';
 import { api } from '@/api';
 import { toast } from 'sonner';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function NotificationCenter({ userEmail }) {
   const [filter, setFilter] = useState('all');
   const queryClient = useQueryClient();
-
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications', userEmail],
-    queryFn: async () => {
-      if (!userEmail) return [];
-      try {
-        const data = await api.get('/notifications');
-        return data || [];
-      } catch (err) {
-        return [];
-      }
-    },
-    enabled: !!userEmail,
-    refetchInterval: 5000,
-  });
+  const { notifications, markAsRead, markAllAsRead } = useNotifications(userEmail);
 
   const handleMarkAsRead = async (id) => {
     const notif = notifications.find(n => n.id === id);
     if (notif && !notif.read) {
       try {
-        await api.put(`/notifications/${id}/read`);
-        queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+        await markAsRead(id);
       } catch (error) {
         console.error('Error marking notification as read:', error);
       }
@@ -40,8 +26,7 @@ export default function NotificationCenter({ userEmail }) {
     if (unreadIds.length === 0) return;
 
     try {
-      await api.put('/notifications/read-all', { ids: unreadIds });
-      queryClient.invalidateQueries({ queryKey: ['notifications', userEmail] });
+      await markAllAsRead();
       toast.success('All notifications marked as read');
     } catch (error) {
       console.error('Error marking all notifications as read:', error);

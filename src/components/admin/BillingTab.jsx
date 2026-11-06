@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CreditCard, Download, ChevronRight, CheckCircle2, FileText, LifeBuoy, Zap } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePricingPlans } from '@/hooks/usePricingPlans';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useSimulatedUpgrade } from '@/hooks/useSimulatedUpgrade';
+import { formatPlanAmount, getPlanBillingDescription, getPlanPriceLabel, getPlanSeatTotal } from '@/lib/pricing';
 
 const S = {
   card: { background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 14 },
   label: { fontSize: 11, fontWeight: 700, color: 'rgba(150,190,240,.55)', textTransform: 'uppercase', letterSpacing: '.8px' },
 };
 
-const PLANS = [
-  { id: 'free', name: 'Free', price: '$0', period: '/month', desc: 'Browse and post to GP Feed', color: '#6B93C4', current: true },
-  { id: 'pro', name: 'Pro', price: '$7.99', period: '/user/mo', desc: 'Private workspace + all features', color: '#4F8AF4' },
-  { id: 'annual', name: 'Pro Annual', price: '$10', period: '/user/mo', desc: 'Everything in Pro · billed yearly', color: '#22D4EE' },
-  { id: 'enterprise', name: 'Enterprise', price: '$14', period: '/user/mo', desc: 'Multiple workspaces + SSO', color: '#7C4DFF' },
-];
+const planColors = { free: '#6B93C4', pro: '#4F8AF4', annual: '#22D4EE', pro_multi: '#7C4DFF', annual_multi: '#22D4EE' };
 
 const INVOICES = [
   { id: 'INV-2026-004', date: 'Apr 1, 2026', amount: '$0.00', plan: 'Free' },
@@ -28,19 +27,56 @@ const PAYMENT_METHODS = [
 const SUBTABS = ['Overview', 'Plans', 'Invoices', 'Payment Methods'];
 
 export default function BillingTab({ members = [], b2bSpaces = [] }) {
+  const { plans: pricingPlans } = usePricingPlans();
+  const { plan: currentPlan, seatCount, seatsUsed, workspaces } = useSubscription();
+  const simulatedUpgrade = useSimulatedUpgrade();
   const [subTab, setSubTab] = useState('Overview');
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [selectedSeatCount, setSelectedSeatCount] = useState(1);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  useEffect(() => {
+    const workspace = workspaces[0];
+    setSelectedWorkspaceId(workspace?.id || '');
+    setSelectedSeatCount(Math.max(1, workspace?.seat_count || seatCount, workspace?.seats_used || 0));
+  }, [seatCount, workspaces]);
 
   const handleUpgrade = (plan) => {
     setSelectedPlan(plan);
+    const workspace = workspaces.find(item => item.id === selectedWorkspaceId);
+    setSelectedSeatCount(Math.max(1, workspace?.seat_count || (workspaces.length ? 1 : seatCount), workspace?.seats_used || 0));
     setShowUpgradeModal(true);
   };
 
-  const confirmUpgrade = () => {
-    toast.success(`Upgraded to ${selectedPlan.name}! You'll receive a confirmation email shortly.`);
-    setShowUpgradeModal(false);
+  const confirmUpgrade = async () => {
+    try {
+      const result = await simulatedUpgrade.mutateAsync({
+        planId: selectedPlan.id,
+        seatCount: selectedSeatCount,
+        workspaceId: selectedWorkspaceId || undefined,
+      });
+      toast.success(result.message);
+      setShowUpgradeModal(false);
+    } catch (error) {
+      toast.error(error.message || 'Simulated payment failed');
+    }
   };
+  const normalizedPlan = (currentPlan || 'free').toLowerCase();
+  const currentPlanName = pricingPlans.find(plan => plan.id === normalizedPlan)?.name || 'Free';
+  const selectedWorkspace = workspaces.find(item => item.id === selectedWorkspaceId);
+  const projectedTotalSeats = workspaces.length
+    ? seatCount - (selectedWorkspace?.seat_count || 0) + selectedSeatCount
+    : selectedSeatCount;
+  const plans = pricingPlans.map(plan => ({
+    ...plan,
+    price: getPlanPriceLabel(plan),
+    period: getPlanBillingDescription(plan),
+    desc: plan.description,
+    color: planColors[plan.id] || '#6B93C4',
+    current: plan.id === normalizedPlan,
+  }));
+  const proTrialDays = pricingPlans.find(plan => plan.id === 'pro')?.trial_days;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -48,17 +84,19 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
       {/* Current Plan Banner */}
       <div style={{ background: 'linear-gradient(135deg,rgba(79,138,244,.12),rgba(34,212,238,.06))', border: '1px solid rgba(79,138,244,.25)', borderRadius: 16, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(79,138,244,.2)', border: '1px solid rgba(79,138,244,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🆓</div>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(79,138,244,.2)', border: '1px solid rgba(79,138,244,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{normalizedPlan === 'free' ? '🆓' : '⭐'}</div>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6AADFF', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.7px' }}>Current Plan</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#EEF4FF' }}>Free</div>
-            <div style={{ fontSize: 13, color: '#6B93C4', marginTop: 2 }}>3 posts/month · Browse all ecosystems</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#EEF4FF' }}>{currentPlanName}</div>
+            <div style={{ fontSize: 13, color: '#6B93C4', marginTop: 2 }}>
+              {normalizedPlan === 'free' ? 'Unlimited GP Feed posting · Browse all ecosystems' : `${seatsUsed} of ${seatCount} workspace seats assigned`}
+            </div>
           </div>
         </div>
         <button
           onClick={() => setSubTab('Plans')}
           style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#4F8AF4,#2563EB)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 14px rgba(79,138,244,.4)', whiteSpace: 'nowrap' }}
-        >⚡ Upgrade Plan</button>
+        >{normalizedPlan === 'free' ? '⚡ Upgrade Plan' : '✦ Manage Plan'}</button>
       </div>
 
       {/* Sub-tabs */}
@@ -83,9 +121,10 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
             </div>
             <div style={{ padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 20 }}>
               {[
+                { label: 'Workspace Seats', value: `${seatsUsed} / ${seatCount}`, pct: Math.min((seatsUsed / Math.max(seatCount, 1)) * 100, 100), color: '#4F8AF4' },
                 { label: 'Members', value: `${members.length}`, pct: Math.min((members.length / 10) * 100, 100), color: '#4F8AF4' },
                 { label: 'B2B Spaces', value: `${b2bSpaces.length}`, pct: Math.min(b2bSpaces.length * 20, 100), color: '#22D4EE' },
-                { label: 'File Storage', value: '28 GB / 50 GB', pct: 56, color: '#2DD4A0' },
+                { label: 'File Storage', value: 'Plan-specific', pct: 0, color: '#2DD4A0' },
                 { label: 'GP Feed Posts', value: '247', pct: 68, color: '#7C4DFF' },
               ].map(s => (
                 <div key={s.label}>
@@ -143,12 +182,12 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
       {/* PLANS */}
       {subTab === 'Plans' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <p style={{ fontSize: 13, color: '#6B93C4' }}>Select a plan to upgrade your account. Changes take effect immediately.</p>
-          {PLANS.map(plan => (
+          <p style={{ fontSize: 13, color: '#6B93C4' }}>Choose an upgrade to simulate a successful payment. No real charge will be made.</p>
+          {plans.map(plan => (
             <div key={plan.id} style={{ ...S.card, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14, border: plan.current ? `1px solid ${plan.color}55` : '1px solid rgba(255,255,255,.07)', background: plan.current ? 'rgba(79,138,244,.06)' : 'rgba(255,255,255,.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: `${plan.color}22`, border: `1px solid ${plan.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                  {plan.id === 'free' ? 'Free' : plan.id === 'pro' ? '★' : plan.id === 'annual' ? '❤' : '🏢'}
+                  {plan.id === 'free' ? 'Free' : plan.id === 'pro' ? '★' : '❤'}
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -163,15 +202,15 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
                   <span style={{ fontSize: 22, fontWeight: 800, color: '#EEF4FF' }}>{plan.price}</span>
                   <span style={{ fontSize: 12, color: '#6B93C4', marginLeft: 4 }}>{plan.period}</span>
                 </div>
-                {!plan.current && (
-                  <button onClick={() => handleUpgrade(plan)} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg,${plan.color},${plan.color}cc)`, color: plan.id === 'annual' ? '#07090F' : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {plan.id === 'enterprise' ? 'Contact Sales' : 'Upgrade'}
+                {!plan.current && plan.id !== 'free' && (
+                  <button onClick={() => handleUpgrade(plan)} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: `linear-gradient(135deg,${plan.color},${plan.color}cc)`, color: plan.billing_interval === 'year' ? '#07090F' : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    Simulate Upgrade
                   </button>
                 )}
               </div>
             </div>
           ))}
-          <p style={{ fontSize: 12, color: '#3D5578', textAlign: 'center' }}>All paid plans include a 14-day free trial · Cancel anytime</p>
+          <p style={{ fontSize: 12, color: '#3D5578', textAlign: 'center' }}>{proTrialDays ? `Pro includes a ${proTrialDays}-day free trial. ` : ''}Pro Annual is billed annually.</p>
         </div>
       )}
 
@@ -238,26 +277,58 @@ export default function BillingTab({ members = [], b2bSpaces = [] }) {
           >
             <CreditCard style={{ width: 16, height: 16 }} /> + Add Payment Method
           </button>
-          <p style={{ fontSize: 12, color: '#3D5578', textAlign: 'center' }}>🔒 Payments secured by Stripe · PCI DSS compliant</p>
+          <p style={{ fontSize: 12, color: '#3D5578', textAlign: 'center' }}>Payment processing is not configured.</p>
         </div>
       )}
 
       {/* Upgrade Confirmation Modal */}
       {showUpgradeModal && selectedPlan && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(6px)' }}>
-          <div style={{ background: '#0E1828', border: '1px solid rgba(255,255,255,.1)', borderRadius: 18, padding: '32px', width: 400, maxWidth: '90vw' }}>
+          <div style={{ background: '#0E1828', border: '1px solid rgba(255,255,255,.1)', borderRadius: 18, padding: '32px', width: 440, maxWidth: '90vw' }}>
             <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 16 }}>⚡</div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#EEF4FF', textAlign: 'center', marginBottom: 8 }}>Upgrade to {selectedPlan.name}</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#EEF4FF', textAlign: 'center', marginBottom: 8 }}>Workspace plan: {selectedPlan.name}</h2>
+            {workspaces.length > 0 && (
+              <label htmlFor="admin-billing-workspace" style={{ display: 'block', fontSize: 13, color: '#EEF4FF', fontWeight: 700, marginBottom: 8 }}>Workspace to update</label>
+            )}
+            {workspaces.length > 0 && (
+              <select
+                id="admin-billing-workspace"
+                value={selectedWorkspaceId}
+                onChange={event => {
+                  const workspace = workspaces.find(item => item.id === event.target.value);
+                  setSelectedWorkspaceId(event.target.value);
+                  setSelectedSeatCount(Math.max(1, workspace?.seat_count || 1, workspace?.seats_used || 0));
+                }}
+                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,.15)', background: '#071020', color: '#EEF4FF', marginBottom: 12 }}
+              >
+                {workspaces.map(workspace => <option key={workspace.id} value={workspace.id}>{workspace.name} ({workspace.seats_used}/{workspace.seat_count})</option>)}
+              </select>
+            )}
+            <label htmlFor="admin-billing-seat-count" style={{ display: 'block', fontSize: 13, color: '#EEF4FF', fontWeight: 700, marginBottom: 8 }}>Seats in this workspace</label>
+            <input
+              id="admin-billing-seat-count"
+              type="number"
+              min={Math.max(1, workspaces.find(item => item.id === selectedWorkspaceId)?.seats_used || 0)}
+              step="1"
+              value={selectedSeatCount}
+              onChange={event => {
+                const count = Number.parseInt(event.target.value, 10);
+                const minimum = Math.max(1, selectedWorkspace?.seats_used || 0);
+                setSelectedSeatCount(Number.isNaN(count) ? minimum : Math.max(minimum, count));
+              }}
+              style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,.15)', background: '#071020', color: '#EEF4FF', marginBottom: 12 }}
+            />
             <p style={{ fontSize: 14, color: '#6B93C4', textAlign: 'center', marginBottom: 24, lineHeight: 1.6 }}>
-              You'll be charged <strong style={{ color: '#EEF4FF' }}>{selectedPlan.price} {selectedPlan.period}</strong> starting today. 14-day free trial included — cancel anytime.
+              {formatPlanAmount(selectedPlan.amount_cents, selectedPlan.currency)} per seat. This workspace: {getPlanSeatTotal(selectedPlan, selectedSeatCount)}. All workspaces: {getPlanSeatTotal(selectedPlan, projectedTotalSeats)}. Simulated only; no real charge.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowUpgradeModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1px solid rgba(255,255,255,.12)', background: 'transparent', color: '#7FA8D4', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button disabled={simulatedUpgrade.isPending} onClick={() => setShowUpgradeModal(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1px solid rgba(255,255,255,.12)', background: 'transparent', color: '#7FA8D4', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
               <button
-                onClick={selectedPlan.id === 'enterprise' ? () => { setShowUpgradeModal(false); window.location.href = '/support'; } : confirmUpgrade}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${selectedPlan.color},${selectedPlan.color}bb)`, color: selectedPlan.id === 'annual' ? '#07090F' : '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                onClick={confirmUpgrade}
+                disabled={simulatedUpgrade.isPending}
+                style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${selectedPlan.color},${selectedPlan.color}bb)`, color: selectedPlan.billing_interval === 'year' ? '#07090F' : '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
-                {selectedPlan.id === 'enterprise' ? 'Contact Sales' : 'Confirm Upgrade'}
+                {simulatedUpgrade.isPending ? 'Processing…' : 'Simulate Payment'}
               </button>
             </div>
           </div>

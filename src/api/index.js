@@ -29,6 +29,15 @@ export const api = {
     if (!response.ok) throw new Error(await response.text());
     return response.json();
   },
+  postFormData: async (endpoint, formData) => {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: { ...getAuthHeaders() },
+      body: formData,
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  },
   put: async (endpoint, data) => {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'PUT',
